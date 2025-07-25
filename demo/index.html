@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Widget Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .demo-section h2 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .puzzle-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .puzzle-info {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            border-left: 4px solid #3291ff;
+        }
+        
+        .puzzle-info h3 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+        
+        .puzzle-info p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        pre {
+            background: #f4f4f4;
+            padding: 16px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .puzzle-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+    
+    <!-- Vite will handle CSS imports via the module script -->
+</head>
+<body>
+    <h1>Chess Widget Demo - Live Development!</h1>
+    
+    <div class="demo-section">
+        <h2>Simple Puzzle</h2>
+        <div class="puzzle-info">
+            <h3>Mate in 2</h3>
+            <p>White to move and mate in 2 moves. Solution: Qh5+ Kg8, Qh7#</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 1"
+                 data-solution="Qd1h5,Kg8h8,Qh5h7"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Tactical Puzzle</h2>
+        <div class="puzzle-info">
+            <h3>Fork Tactic</h3>
+            <p>Black to move. Find the knight fork that wins material. Solution: Ne2+</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 1"
+                 data-solution="Nf6e2"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Auto-Flip Board (Black to Move)</h2>
+        <div class="puzzle-info">
+            <h3>Board Flips with Turn</h3>
+            <p>This board automatically rotates when it's black's turn. Try making moves to see the flip!</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+                 data-auto-flip="true"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Free Play Mode</h2>
+        <div class="puzzle-info">
+            <h3>Standard Starting Position</h3>
+            <p>No solution defined - free play mode. Make any legal moves you want!</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Different Board Sizes</h2>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"
+                 data-width="300">
+            </div>
+            <div class="chess-puzzle" 
+                 data-fen="r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"
+                 data-width="500">
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>How to Use</h2>
+        <p>To add a chess widget to your website, simply include the CSS and JavaScript files, then add a div with the appropriate data attributes:</p>
+        
+        <pre><code>&lt;!-- Include the widget files --&gt;
+&lt;link rel="stylesheet" href="chess-widget.min.css"&gt;
+&lt;script src="chess-widget.min.js"&gt;&lt;/script&gt;
+
+&lt;!-- Create a puzzle --&gt;
+&lt;div class="chess-puzzle" 
+     data-fen="r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"
+     data-solution="d2d4,e5d4,c2c3"
+     data-width="400"&gt;
+&lt;/div&gt;</code></pre>
+        
+        <h3>Data Attributes</h3>
+        <ul>
+            <li><code>data-fen</code>: The chess position in FEN notation (required)</li>
+            <li><code>data-solution</code>: Comma-separated solution moves (optional, enables puzzle mode)</li>
+            <li><code>data-width</code>: Board width in pixels (optional, default: 400)</li>
+            <li><code>data-auto-flip</code>: Auto-rotate board for black's turn (optional, set to "true" to enable)</li>
+        </ul>
+        
+        <p>The widget is completely standalone with all dependencies (chessground and chess.js) bundled - no CDN calls required!</p>
+    </div>
+    
+    <!-- Load the chess widget via Vite -->
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

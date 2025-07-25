@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:cdnjs.com)",
+      "Bash(mkdir:*)",
+      "Bash(start index.html)",
+      "Bash(start:*)",
+      "Bash(explorer demo\\index.html)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(cp:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  }
+}
