@@ -3570,12 +3570,21 @@ class ChessWidget {
         // Correct move
         this.currentMoveIndex++;
         this.showFeedback('correct');
-        
+
         if (this.currentMoveIndex >= this.solution.length) {
           this.showFeedback('solved');
           this.chessground.set({ movable: { color: undefined } });
         } else {
-          this.updateBoard();
+          // Check if there's an opponent's response to play automatically
+          const nextMove = this.solution[this.currentMoveIndex];
+          if (nextMove) {
+            // Play opponent's response after a short delay for better UX
+            setTimeout(() => {
+              this.playAutomaticMove(nextMove);
+            }, 500);
+          } else {
+            this.updateBoard();
+          }
         }
       } else {
         // Wrong move
@@ -3603,7 +3612,7 @@ class ChessWidget {
   updateBoard() {
     const currentTurn = this.chess.turn();
     const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
-    
+
     this.chessground.set({
       fen: this.chess.fen(),
       orientation: orientation,
@@ -3613,6 +3622,43 @@ class ChessWidget {
         dests: this.getDests()
       }
     });
+  }
+
+  playAutomaticMove(moveNotation) {
+    // Try to parse and play the move (supports both UCI and SAN notation)
+    let move = null;
+
+    // Try SAN notation first (e.g., Nf3, e4)
+    try {
+      move = this.chess.move(moveNotation);
+    } catch (e) {
+      // SAN failed, try UCI notation
+    }
+
+    // If SAN failed, try UCI notation (e.g., e2e4)
+    if (!move && moveNotation.length >= 4) {
+      const from = moveNotation.substring(0, 2);
+      const to = moveNotation.substring(2, 4);
+      const promotion = moveNotation.length > 4 ? moveNotation[4] : undefined;
+      move = this.chess.move({ from, to, promotion });
+    }
+
+    if (move) {
+      // Animate the move on the board for smooth visual effect
+      this.chessground.move(move.from, move.to);
+
+      // Increment move index
+      this.currentMoveIndex++;
+
+      // Check if puzzle is complete
+      if (this.currentMoveIndex >= this.solution.length) {
+        this.showFeedback('solved');
+        this.chessground.set({ movable: { color: undefined } });
+      } else {
+        // Update board state for next user move
+        this.updateBoard();
+      }
+    }
   }
   
   showFeedback(type) {
@@ -3645,6 +3691,7 @@ class ChessWidget {
       fen: this.fen,
       orientation: orientation,
       turnColor: currentTurn === 'w' ? 'white' : 'black',
+      lastMove: undefined,
       movable: {
         color: currentTurn === 'w' ? 'white' : 'black',
         dests: this.getDests()
