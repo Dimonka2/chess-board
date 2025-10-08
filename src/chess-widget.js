@@ -8,7 +8,9 @@ class ChessWidget {
   constructor(element) {
     this.element = element;
     this.fen = element.dataset.fen;
-    this.solution = element.dataset.solution ? element.dataset.solution.split(',') : [];
+    this.solution = element.dataset.solution
+      ? element.dataset.solution.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
     this.width = element.dataset.width || 400;
     this.theme = element.dataset.theme || 'blue';
     this.autoFlip = element.dataset.autoFlip === 'true';
@@ -120,11 +122,19 @@ class ChessWidget {
   
   onMove(orig, dest) {
     const move = this.chess.move({ from: orig, to: dest });
-    
+
     if (!move) {
       // Invalid move
+      const currentTurn = this.chess.turn();
+      const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
       this.chessground.set({
-        fen: this.chess.fen()
+        fen: this.chess.fen(),
+        orientation: orientation,
+        turnColor: currentTurn === 'w' ? 'white' : 'black',
+        movable: {
+          color: currentTurn === 'w' ? 'white' : 'black',
+          dests: this.getDests()
+        }
       });
       return;
     }
@@ -151,10 +161,11 @@ class ChessWidget {
         this.chess.undo();
         const currentTurn = this.chess.turn();
         const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
-        
+
         this.chessground.set({
           fen: this.chess.fen(),
           orientation: orientation,
+          turnColor: currentTurn === 'w' ? 'white' : 'black',
           movable: {
             color: currentTurn === 'w' ? 'white' : 'black',
             dests: this.getDests()
@@ -229,12 +240,14 @@ class ChessWidget {
   }
 }
 
-// Auto-initialize if DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => ChessWidget.init());
-} else {
-  ChessWidget.init();
-}
+// Make available on window early so other scripts can reference it
+try { window.ChessWidget = ChessWidget; } catch (_) {}
 
-// Export for manual initialization
-window.ChessWidget = ChessWidget;
+// Auto-initialize if DOM is ready
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => ChessWidget.init());
+  } else {
+    ChessWidget.init();
+  }
+}

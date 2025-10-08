@@ -81,6 +81,68 @@
                 align-items: center;
             }
         }
+        
+        /* ELO Selector Styles */
+        .elo-selector {
+            display: flex;
+            gap: 6px;
+            margin: 16px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .elo-btn {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-width: 70px;
+        }
+        
+        .elo-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+        
+        .elo-btn.active {
+            background: #3291ff;
+            color: white;
+            border-color: #3291ff;
+        }
+        
+        .elo-group {
+            display: none;
+            width: 100%;
+        }
+        
+        .elo-group.active {
+            display: block;
+        }
+        
+        .puzzle-item {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .puzzle-item h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .puzzle-item p {
+            margin: 0 0 16px 0;
+            color: #666;
+            font-style: italic;
+        }
     </style>
     
     <!-- Vite will handle CSS imports via the module script -->
@@ -89,20 +151,180 @@
     <h1>Chess Widget Demo - Live Development!</h1>
     
     <div class="demo-section">
-        <h2>Simple Puzzle</h2>
+        <h2>Tactical Puzzles by ELO Rating</h2>
         <div class="puzzle-info">
-            <h3>Mate in 2</h3>
-            <p>White to move and mate in 2 moves. Solution: Qh5+ Kg8, Qh7#</p>
+            <h3>Choose Difficulty Level</h3>
+            <p>Select your skill level to see appropriate puzzles. Try to solve each puzzle by finding the best move!</p>
+            <div class="elo-selector">
+                <button class="elo-btn active" data-elo="600">ELO 600</button>
+                <button class="elo-btn" data-elo="800">ELO 800</button>
+                <button class="elo-btn" data-elo="1000">ELO 1000</button>
+                <button class="elo-btn" data-elo="1200">ELO 1200</button>
+                <button class="elo-btn" data-elo="1400">ELO 1400</button>
+                <button class="elo-btn" data-elo="1600">ELO 1600</button>
+                <button class="elo-btn" data-elo="1800">ELO 1800</button>
+                <button class="elo-btn" data-elo="2000">ELO 2000</button>
+                <button class="elo-btn" data-elo="2200">ELO 2200</button>
+                <button class="elo-btn" data-elo="2400">ELO 2400</button>
+            </div>
         </div>
-        <div class="puzzle-container">
-            <div class="chess-puzzle" 
-                 data-fen="r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 1"
-                 data-solution="Qd1h5,Kg8h8,Qh5h7"
-                 data-width="400">
+        <div class="puzzle-container" id="elo-puzzles">
+            <!-- ELO 600 Puzzles -->
+            <div class="elo-group active" data-elo="600">
+                <div class="puzzle-item">
+                    <h4>Back-Rank Mate</h4>
+                    <p>Back-rank mate: 1.Re8#</p>
+                    <div class="chess-puzzle" 
+                         data-fen="rnb3kr/p4ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1"
+                         data-solution="e1e8"
+                         data-width="400">
+                    </div>
+                </div>
+                <div class="puzzle-item">
+                    <h4>Knight Fork</h4>
+                    <p>Knight fork: 1.Nd6+ Kd8 2.Nxb7 wins the queen</p>
+                    <div class="chess-puzzle" 
+                         data-fen="r3k2r/pq1p1ppp/8/5N2/8/8/5PPP/6K1 w - - 0 1"
+                         data-solution="f5d6,e8d8,d6b7"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 800 Puzzles -->
+            <div class="elo-group" data-elo="800">
+                <div class="puzzle-item">
+                    <h4>Pin Tactic</h4>
+                    <p>Pin: the queen on h7 is pinned, so 1.Nxc5 wins the bishop</p>
+                    <div class="chess-puzzle" 
+                         data-fen="5r1k/pppp1ppq/8/5N2/8/3N4/PPPPPP1P/4K1R1 w - - 0 1"
+                         data-solution="f5c5"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 1000 Puzzles -->
+            <div class="elo-group" data-elo="1000">
+                <div class="puzzle-item">
+                    <h4>Discovered Attack</h4>
+                    <p>Discovered attack: 1.Bxh7+!!—rook checks the king while the bishop captures the queen</p>
+                    <div class="chess-puzzle" 
+                         data-fen="r1n1k2r/pppp1ppq/8/8/8/8/PPPP1PPP/4R1K1 w - - 0 1"
+                         data-solution="Bxh7+"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 1200 Puzzles -->
+            <div class="elo-group" data-elo="1200">
+                <div class="puzzle-item">
+                    <h4>Skewer Tactic</h4>
+                    <p>Skewer: 1.Rf8+ Kg7 2.Rxa8 wins the rook</p>
+                    <div class="chess-puzzle" 
+                         data-fen="5rkr/ppppp2p/8/8/8/8/6PP/5RK1 w - - 0 1"
+                         data-solution="f1f8,g8g7,f8a8"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 1400 Puzzles -->
+            <div class="elo-group" data-elo="1400">
+                <div class="puzzle-item">
+                    <h4>Greek Gift Sacrifice</h4>
+                    <p>Greek-Gift sacrifice: 1.Bxh7+ Kxh7 2.Ng5+ Kg8 3.Qh7#</p>
+                    <div class="chess-puzzle" 
+                         data-fen="5r1k/pppppppp/8/8/8/3B1N2/PPQ2PPP/5RK1 w - - 0 1"
+                         data-solution="Bxh7+,Kxh7,Ng5+,Kg8,Qh7#"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 1600 Puzzles -->
+            <div class="elo-group" data-elo="1600">
+                <div class="puzzle-item">
+                    <h4>Smothered Mate</h4>
+                    <p>Smothered mate: 1.Qg8+!! Rxg8 2.Nf7#</p>
+                    <div class="chess-puzzle" 
+                         data-fen="5r1k/4q1pp/8/8/8/1B1Q4/8/6K1 w - - 0 1"
+                         data-solution="Qg8+,Rxg8,Nf7#"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 1800 Puzzles -->
+            <div class="elo-group" data-elo="1800">
+                <div class="puzzle-item">
+                    <h4>Boden's Mate</h4>
+                    <p>Boden's Mate: 1.Rxc6+! bxc6 2.Ba6#</p>
+                    <div class="chess-puzzle" 
+                         data-fen="2kr4/pppppppp/2p5/8/6B1/8/8/2R1KB2 w - - 0 1"
+                         data-solution="Rxc6+,bxc6,Ba6#"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 2000 Puzzles -->
+            <div class="elo-group" data-elo="2000">
+                <div class="puzzle-item">
+                    <h4>Underpromotion Mate</h4>
+                    <p>Underpromotion mate: 1.g8=R# (promotion to a queen would be stalemate)</p>
+                    <div class="chess-puzzle" 
+                         data-fen="7k/6Pp/8/7K/8/8/8/8 w - - 0 1"
+                         data-solution="g8=R#"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 2200 Puzzles -->
+            <div class="elo-group" data-elo="2200">
+                <div class="puzzle-item">
+                    <h4>Interference</h4>
+                    <p>Interference: 1.Bf7!! (or …Rxf7) 2.Qh7#</p>
+                    <div class="chess-puzzle" 
+                         data-fen="5rnk/4q1pp/8/8/8/1B1Q4/8/6K1 w - - 0 1"
+                         data-solution="Bf7,Qxf7,Qh7#"
+                         data-width="400">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ELO 2400 Puzzles -->
+            <div class="elo-group" data-elo="2400">
+                <div class="puzzle-item">
+                    <h4>Double Sacrifice</h4>
+                    <p>Double sacrifice: 1.Rxh7+! Kxh7 2.Ng5+ Kg8 3.Qh5 f6 4.Qh7#</p>
+                    <div class="chess-puzzle" 
+                         data-fen="r5k1/5pp1/8/6N1/8/8/2B5/3QK2R w - - 0 1"
+                         data-solution="Rxh7+,Kxh7,Ng5+,Kg8,Qh5,f6,Qh7#"
+                         data-width="400">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
+    <div class="demo-section">
+        <h2>Back-Rank Mate</h2>
+        <div class="puzzle-info">
+            <h3>Checkmate in 1</h3>
+            <p>White to move and deliver checkmate. The black king is trapped by its own pawns on the back rank. Solution: Re8#</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="rnb3kr/p4ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1"
+                         data-solution="e1e8"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+
     <div class="demo-section">
         <h2>Tactical Puzzle</h2>
         <div class="puzzle-info">
@@ -112,7 +334,37 @@
         <div class="puzzle-container">
             <div class="chess-puzzle" 
                  data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 1"
-                 data-solution="Nf6e2"
+                 data-solution="f6e2"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Pin Tactic</h2>
+        <div class="puzzle-info">
+            <h3>Win Material with Pin</h3>
+            <p>White to move. Use the pin to win the black queen. Solution: Bb5+</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1"
+                 data-solution="c4b5"
+                 data-width="400">
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Discovery Attack</h2>
+        <div class="puzzle-info">
+            <h3>Double Attack</h3>
+            <p>White to move. Find the discovered attack that wins material. Solution: Nd5</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle" 
+                 data-fen="r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w - - 0 1"
+                 data-solution="f3d5"
                  data-width="400">
             </div>
         </div>
@@ -189,5 +441,47 @@
     
     <!-- Load the chess widget via Vite -->
     <script type="module" src="./main.js"></script>
+    
+    <script>
+        // ELO selector functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const eloButtons = document.querySelectorAll('.elo-btn');
+            const eloGroups = document.querySelectorAll('.elo-group');
+            
+            eloButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const selectedElo = this.dataset.elo;
+                    
+                    // Remove active class from all buttons
+                    eloButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Hide all elo groups
+                    eloGroups.forEach(group => group.classList.remove('active'));
+                    // Show selected elo group
+                    const targetGroup = document.querySelector(`.elo-group[data-elo="${selectedElo}"]`);
+                    if (targetGroup) {
+                        targetGroup.classList.add('active');
+                        
+                        // Reinitialize chess widgets in the new group
+                        setTimeout(() => {
+                            const widgets = targetGroup.querySelectorAll('.chess-puzzle');
+                            widgets.forEach(widget => {
+                                // Clear existing widget if any
+                                widget.innerHTML = '';
+                                // Reinitialize
+                                if (window.ChessWidget) {
+                                  new window.ChessWidget(widget);
+                                } else {
+                                  console.error('ChessWidget is not available on window. Ensure demo/main.js loaded src/chess-widget.js');
+                                }
+                            });
+                        }, 100);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -5,8 +5,8 @@
   "main": "dist/chess-widget.min.js",
   "scripts": {
     "build": "node build.js",
-    "dev": "vite demo --port=3000",
-    "dev:prod": "npm run build && vite demo --port=3000"
+    "dev": "vite demo --port=3001",
+    "dev:prod": "npm run build && vite demo --port=3001"
   },
   "keywords": ["chess", "widget", "puzzle", "chessground", "chess.js"],
   "author": "",

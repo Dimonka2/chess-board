@@ -3430,9 +3430,12 @@ class ChessWidget {
   constructor(element) {
     this.element = element;
     this.fen = element.dataset.fen;
-    this.solution = element.dataset.solution ? element.dataset.solution.split(',') : [];
+    this.solution = element.dataset.solution
+      ? element.dataset.solution.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
     this.width = element.dataset.width || 400;
     this.theme = element.dataset.theme || 'blue';
+    this.autoFlip = element.dataset.autoFlip === 'true';
     
     this.currentMoveIndex = 0;
     this.chess = null;
@@ -3443,15 +3446,13 @@ class ChessWidget {
   
   init() {
     try {
-      // Create chess instance - Chess is now bundled
-      console.log('Initializing chess with FEN:', this.fen);
+      // Create chess instance
       this.chess = new Chess(this.fen);
-      console.log('Chess instance created:', this.chess);
       
       // Create board container
       this.createBoardContainer();
       
-      // Initialize chessground - Chessground is now bundled
+      // Initialize chessground
       this.initChessground();
       
       // Create controls
@@ -3480,16 +3481,18 @@ class ChessWidget {
   }
   
   initChessground() {
-    console.log('Initializing chessground...');
-    console.log('Board element:', this.boardElement);
-    console.log('Chessground function:', typeof Chessground);
+    console.log('initChessground called with FEN:', this.fen);
+    
+    // Determine board orientation
+    const currentTurn = this.chess.turn();
+    const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
     
     const config = {
       fen: this.fen,
-      orientation: 'white',
-      turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+      orientation: orientation,
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
       movable: {
-        color: this.chess.turn() === 'w' ? 'white' : 'black',
+        color: currentTurn === 'w' ? 'white' : 'black',
         free: false,
         dests: this.getDests()
       },
@@ -3501,18 +3504,20 @@ class ChessWidget {
     console.log('Chessground config:', config);
     
     try {
-      // Try different ways to initialize Chessground
-      if (typeof initChessground === 'function') {
-        this.chessground = initChessground({ el: this.boardElement, config: config });
-      } else if (typeof Chessground === 'function') {
+      // Initialize Chessground (available globally)
+      if (typeof Chessground === 'function') {
         this.chessground = Chessground(this.boardElement, config);
-      } else if (typeof window.Chessground === 'function') {
-        this.chessground = window.Chessground(this.boardElement, config);
+        console.log('Chessground instance created:', this.chessground);
+        
+        // Force set the position
+        if (this.chessground && this.chessground.set) {
+          console.log('Setting FEN position manually:', this.fen);
+          this.chessground.set({ fen: this.fen });
+        }
       } else {
-        console.error('Chessground not found', { initChessground: typeof initChessground, Chessground: typeof Chessground });
+        console.error('Chessground not available');
         return;
       }
-      console.log('Chessground instance created:', this.chessground);
     } catch (error) {
       console.error('Error creating chessground:', error);
     }
@@ -3539,11 +3544,19 @@ class ChessWidget {
   
   onMove(orig, dest) {
     const move = this.chess.move({ from: orig, to: dest });
-    
+
     if (!move) {
       // Invalid move
+      const currentTurn = this.chess.turn();
+      const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
       this.chessground.set({
-        fen: this.chess.fen()
+        fen: this.chess.fen(),
+        orientation: orientation,
+        turnColor: currentTurn === 'w' ? 'white' : 'black',
+        movable: {
+          color: currentTurn === 'w' ? 'white' : 'black',
+          dests: this.getDests()
+        }
       });
       return;
     }
@@ -3568,10 +3581,15 @@ class ChessWidget {
         // Wrong move
         this.showFeedback('wrong');
         this.chess.undo();
+        const currentTurn = this.chess.turn();
+        const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
+
         this.chessground.set({
           fen: this.chess.fen(),
+          orientation: orientation,
+          turnColor: currentTurn === 'w' ? 'white' : 'black',
           movable: {
-            color: this.chess.turn() === 'w' ? 'white' : 'black',
+            color: currentTurn === 'w' ? 'white' : 'black',
             dests: this.getDests()
           }
         });
@@ -3583,11 +3601,15 @@ class ChessWidget {
   }
   
   updateBoard() {
+    const currentTurn = this.chess.turn();
+    const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
+    
     this.chessground.set({
       fen: this.chess.fen(),
-      turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+      orientation: orientation,
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
       movable: {
-        color: this.chess.turn() === 'w' ? 'white' : 'black',
+        color: currentTurn === 'w' ? 'white' : 'black',
         dests: this.getDests()
       }
     });
@@ -3615,12 +3637,16 @@ class ChessWidget {
     this.chess = new Chess(this.fen);
     this.currentMoveIndex = 0;
     
+    // Determine initial orientation after reset
+    const currentTurn = this.chess.turn();
+    const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
+    
     this.chessground.set({
       fen: this.fen,
-      orientation: 'white',
-      turnColor: this.chess.turn() === 'w' ? 'white' : 'black',
+      orientation: orientation,
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
       movable: {
-        color: this.chess.turn() === 'w' ? 'white' : 'black',
+        color: currentTurn === 'w' ? 'white' : 'black',
         dests: this.getDests()
       }
     });
@@ -3636,12 +3662,15 @@ class ChessWidget {
   }
 }
 
+// Make available on window early so other scripts can reference it
+try { window.ChessWidget = ChessWidget; } catch (_) {}
+
 // Auto-initialize if DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => ChessWidget.init());
-} else {
-  ChessWidget.init();
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => ChessWidget.init());
+  } else {
+    ChessWidget.init();
+  }
 }
 
-// Export for manual initialization
-window.ChessWidget = ChessWidget;
