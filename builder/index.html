@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Puzzle Builder</title>
+  <link rel="stylesheet" href="builder.css">
+  <!-- Load bundled chess libraries from dist -->
+  <link rel="stylesheet" href="/dist/chess-widget.min.css">
+  <script src="/dist/chess-widget.min.js"></script>
+</head>
+<body>
+  <div class="builder-container">
+    <!-- Header -->
+    <header class="builder-header">
+      <h1>Chess Puzzle Builder</h1>
+      <div class="header-actions">
+        <button id="btn-new">New Puzzle</button>
+        <div class="dropdown">
+          <button class="dropdown-toggle" id="menu-toggle">Menu ▾</button>
+          <div class="dropdown-menu" id="dropdown-menu">
+            <button id="btn-load">📂 Load from JSON</button>
+            <button id="btn-save">💾 Save as JSON</button>
+            <div class="dropdown-divider"></div>
+            <button id="btn-copy-html">📋 Copy HTML Snippet</button>
+            <button id="btn-download-json">📥 Download JSON</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="builder-main">
+      <!-- Left Panel: Editor -->
+      <div class="editor-panel">
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-board">📋 Board Setup</button>
+          <button class="mode-btn" id="mode-solution">🎯 Solution Recording</button>
+        </div>
+
+        <section class="board-section">
+          <h2 id="board-section-title">Board Editor</h2>
+
+          <!-- Board Setup Tools (only visible in board mode) -->
+          <div class="board-setup-only">
+          <!-- Piece Palette -->
+          <div class="piece-palette">
+            <div class="palette-group">
+              <span class="palette-label">White:</span>
+              <button class="palette-piece" data-piece="wK">♔</button>
+              <button class="palette-piece" data-piece="wQ">♕</button>
+              <button class="palette-piece" data-piece="wR">♖</button>
+              <button class="palette-piece" data-piece="wB">♗</button>
+              <button class="palette-piece" data-piece="wN">♘</button>
+              <button class="palette-piece" data-piece="wP">♙</button>
+            </div>
+            <div class="palette-group">
+              <span class="palette-label">Black:</span>
+              <button class="palette-piece" data-piece="bK">♚</button>
+              <button class="palette-piece" data-piece="bQ">♛</button>
+              <button class="palette-piece" data-piece="bR">♜</button>
+              <button class="palette-piece" data-piece="bB">♝</button>
+              <button class="palette-piece" data-piece="bN">♞</button>
+              <button class="palette-piece" data-piece="bP">♟</button>
+            </div>
+          </div>
+
+          <!-- Board Actions -->
+          <div class="board-actions">
+            <button id="btn-start-position">Start Position</button>
+            <button id="btn-empty-board">Empty Board</button>
+            <button id="btn-flip-board">Flip Board</button>
+            <button id="btn-trash" class="btn-trash">🗑️ Remove Piece</button>
+          </div>
+          </div><!-- End board-setup-only -->
+
+          <!-- Chessground Board Container (always visible) -->
+          <div id="editor-board" class="editor-board"></div>
+
+          <!-- Position Controls (only visible in board mode) -->
+          <div class="board-setup-only">
+          <!-- FEN Display -->
+          <div class="fen-display">
+            <label>FEN:</label>
+            <input type="text" id="fen-input" readonly>
+            <button id="btn-copy-fen">Copy</button>
+            <span id="fen-status" class="fen-status"></span>
+          </div>
+
+          <!-- Position Controls -->
+          <div class="position-controls">
+            <div class="form-group inline">
+              <label>Side to move:</label>
+              <select id="side-to-move">
+                <option value="w">White</option>
+                <option value="b">Black</option>
+              </select>
+            </div>
+
+            <div class="form-group inline castling-rights">
+              <label>Castling:</label>
+              <label><input type="checkbox" id="castle-K" value="K"> K</label>
+              <label><input type="checkbox" id="castle-Q" value="Q"> Q</label>
+              <label><input type="checkbox" id="castle-k" value="k"> k</label>
+              <label><input type="checkbox" id="castle-q" value="q"> q</label>
+            </div>
+
+            <div class="form-group inline">
+              <label for="en-passant">En Passant:</label>
+              <input type="text" id="en-passant" placeholder="e.g., e3" maxlength="2">
+            </div>
+
+            <div class="form-group inline">
+              <label for="halfmove">Halfmove:</label>
+              <input type="number" id="halfmove" value="0" min="0">
+            </div>
+
+            <div class="form-group inline">
+              <label for="fullmove">Fullmove:</label>
+              <input type="number" id="fullmove" value="1" min="1">
+            </div>
+          </div>
+          </div><!-- End board-setup-only -->
+        </section>
+
+        <section class="solution-section solution-recording-only">
+          <h2>Solution Editor</h2>
+          <div class="solution-controls">
+            <button id="btn-start-recording" class="btn-primary">Start Recording</button>
+            <button id="btn-stop-recording" class="btn-secondary" disabled>Stop Recording</button>
+            <button id="btn-clear-solution">Clear Solution</button>
+          </div>
+
+          <div class="solution-list">
+            <table id="solution-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>SAN</th>
+                  <th>UCI</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="solution-tbody">
+                <tr class="empty-state">
+                  <td colspan="4">No moves recorded. Start recording to build the solution.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Panel: Preview & Export -->
+      <div class="preview-panel">
+        <section class="preview-section">
+          <h2>Live Preview</h2>
+          <div id="preview-info" class="preview-info"></div>
+          <div id="preview-container">
+            <!-- ChessWidget will be rendered here -->
+            <div class="chess-puzzle"
+                 data-fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                 data-solution=""
+                 data-width="400"
+                 data-theme="blue"
+                 data-auto-flip="true">
+            </div>
+          </div>
+        </section>
+
+        <section class="metadata-section">
+          <h2>Puzzle Metadata</h2>
+          <div class="form-group">
+            <label for="puzzle-title">Title</label>
+            <input type="text" id="puzzle-title" placeholder="Enter puzzle title">
+          </div>
+          <div class="form-group">
+            <label for="puzzle-tags">Tags</label>
+            <input type="text" id="puzzle-tags" placeholder="Comma-separated tags">
+          </div>
+          <div class="form-group">
+            <label for="puzzle-difficulty">Difficulty</label>
+            <select id="puzzle-difficulty">
+              <option value="">Select difficulty</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+              <option value="expert">Expert</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h2>Widget Settings</h2>
+          <div class="form-group">
+            <label for="widget-width">Width (px)</label>
+            <input type="number" id="widget-width" value="400" min="200" max="800">
+          </div>
+          <div class="form-group">
+            <label for="widget-theme">Theme</label>
+            <select id="widget-theme">
+              <option value="blue">Blue</option>
+              <option value="brown">Brown</option>
+              <option value="green">Green</option>
+            </select>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- HTML Snippet Dialog -->
+  <div id="html-dialog" class="dialog-overlay">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h2>HTML Snippet</h2>
+        <button class="dialog-close" id="dialog-close">✖</button>
+      </div>
+      <div class="dialog-body">
+        <p>Copy this HTML snippet and paste it into your webpage:</p>
+        <textarea id="html-snippet-text" readonly></textarea>
+      </div>
+      <div class="dialog-footer">
+        <button id="dialog-copy" class="btn-primary">Copy to Clipboard</button>
+        <button id="dialog-cancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="builder.js"></script>
+</body>
+</html>

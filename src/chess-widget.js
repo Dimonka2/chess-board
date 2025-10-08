@@ -14,11 +14,12 @@ class ChessWidget {
     this.width = element.dataset.width || 400;
     this.theme = element.dataset.theme || 'blue';
     this.autoFlip = element.dataset.autoFlip === 'true';
-    
+    this.fixedOrientation = element.dataset.orientation || null; // 'white', 'black', or null for auto
+
     this.currentMoveIndex = 0;
     this.chess = null;
     this.chessground = null;
-    
+
     this.init();
   }
   
@@ -58,13 +59,23 @@ class ChessWidget {
     this.resetButton = this.element.querySelector('.chess-widget-reset');
   }
   
+  getOrientation() {
+    // If fixedOrientation is set, always use it
+    if (this.fixedOrientation) {
+      return this.fixedOrientation;
+    }
+    // Otherwise, use autoFlip logic
+    const currentTurn = this.chess.turn();
+    return this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
+  }
+
   initChessground() {
     console.log('initChessground called with FEN:', this.fen);
-    
+
     // Determine board orientation
     const currentTurn = this.chess.turn();
-    const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
-    
+    const orientation = this.getOrientation();
+
     const config = {
       fen: this.fen,
       orientation: orientation,
@@ -126,10 +137,9 @@ class ChessWidget {
     if (!move) {
       // Invalid move
       const currentTurn = this.chess.turn();
-      const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
       this.chessground.set({
         fen: this.chess.fen(),
-        orientation: orientation,
+        orientation: this.getOrientation(),
         turnColor: currentTurn === 'w' ? 'white' : 'black',
         movable: {
           color: currentTurn === 'w' ? 'white' : 'black',
@@ -169,11 +179,10 @@ class ChessWidget {
         this.showFeedback('wrong');
         this.chess.undo();
         const currentTurn = this.chess.turn();
-        const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
 
         this.chessground.set({
           fen: this.chess.fen(),
-          orientation: orientation,
+          orientation: this.getOrientation(),
           turnColor: currentTurn === 'w' ? 'white' : 'black',
           movable: {
             color: currentTurn === 'w' ? 'white' : 'black',
@@ -189,11 +198,10 @@ class ChessWidget {
   
   updateBoard() {
     const currentTurn = this.chess.turn();
-    const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
 
     this.chessground.set({
       fen: this.chess.fen(),
-      orientation: orientation,
+      orientation: this.getOrientation(),
       turnColor: currentTurn === 'w' ? 'white' : 'black',
       movable: {
         color: currentTurn === 'w' ? 'white' : 'black',
@@ -260,14 +268,13 @@ class ChessWidget {
   reset() {
     this.chess = new Chess(this.fen);
     this.currentMoveIndex = 0;
-    
+
     // Determine initial orientation after reset
     const currentTurn = this.chess.turn();
-    const orientation = this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
-    
+
     this.chessground.set({
       fen: this.fen,
-      orientation: orientation,
+      orientation: this.getOrientation(),
       turnColor: currentTurn === 'w' ? 'white' : 'black',
       lastMove: undefined,
       movable: {

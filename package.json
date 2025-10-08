@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.js",
     "dev": "vite demo --port=3001",
-    "dev:prod": "npm run build && vite demo --port=3001"
+    "dev:prod": "npm run build && vite demo --port=3001",
+    "dev:builder": "vite --config vite.builder.config.js"
   },
   "keywords": ["chess", "widget", "puzzle", "chessground", "chess.js"],
   "author": "",
