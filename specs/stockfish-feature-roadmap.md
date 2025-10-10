@@ -50,9 +50,29 @@
 - [ ] Test: All utilities accessible
 - **Estimated**: 1 hour
 
+#### 1.4a Create Alternative Solutions System
+- [ ] Create `src/widget-solution-validator.js`
+  - [ ] Implement `SolutionValidator` class
+  - [ ] Parse solution strings with pipe separators
+  - [ ] Track active solution paths
+  - [ ] Validate moves against multiple paths
+- [ ] Test: Alternative solutions work correctly
+- **Estimated**: 2 hours
+
+#### 1.4b Create Internationalization System
+- [ ] Create `src/widget-i18n.js`
+  - [ ] Implement `I18n` class
+  - [ ] Add English translations
+  - [ ] Add German translations
+  - [ ] Implement placeholder replacement
+  - [ ] Add language fallback logic
+- [ ] Test: Language switching works
+- [ ] Test: Placeholder replacement works
+- **Estimated**: 2 hours
+
 #### 1.5 Update Build System
 - [ ] Modify `build.js` to concatenate multiple source files
-- [ ] Add file order configuration
+- [ ] Add file order configuration (include i18n and solution-validator)
 - [ ] Add source mapping support (optional)
 - [ ] Test: Build produces identical output to current version
 - [ ] Test: Minified version still works
@@ -64,20 +84,32 @@
 - [ ] Test: Full widget functionality intact
 - **Estimated**: 1 hour
 
-#### 1.7 Documentation
+#### 1.7 Integration Testing
+- [ ] Test alternative solutions with simple puzzles
+- [ ] Test alternative solutions with branching paths
+- [ ] Test i18n with English (default)
+- [ ] Test i18n with German
+- [ ] Test language fallback behavior
+- **Estimated**: 2 hours
+
+#### 1.8 Documentation
 - [ ] Update CLAUDE.md with new architecture
 - [ ] Add inline comments explaining module structure
 - [ ] Document build process changes
-- **Estimated**: 1 hour
+- [ ] Document alternative solutions format
+- [ ] Document i18n usage
+- **Estimated**: 2 hours
 
 ### Phase 1 Acceptance Criteria
 - ✅ Widget builds successfully from multiple source files
 - ✅ All existing functionality works identically
-- ✅ Build output file size unchanged
+- ✅ Alternative solutions parser works correctly
+- ✅ I18n system works with English and German
+- ✅ Build output file size increase is minimal
 - ✅ All existing tests pass
 - ✅ Code is more maintainable and readable
 
-**Phase 1 Total Estimated Time**: 11 hours (~2 days)
+**Phase 1 Total Estimated Time**: 18 hours (~2.5 days)
 
 ---
 
@@ -128,7 +160,9 @@
 - **Estimated**: 2 hours
 
 #### 2.5 Configuration Parsing
-- [ ] Add data attribute parsing for Stockfish config
+- [ ] Add data attribute parsing for all new features
+  - [ ] `data-solution-alternatives` (alternative solutions)
+  - [ ] `data-lang` (i18n)
   - [ ] `data-stockfish-enabled`
   - [ ] `data-stockfish-depth`
   - [ ] `data-stockfish-timeout`
@@ -139,28 +173,43 @@
 - [ ] Test: Configuration parsed correctly
 - **Estimated**: 2 hours
 
-#### 2.6 Initialize Stockfish Components
+#### 2.6 Initialize All Components
+- [ ] Initialize I18n in widget constructor
+- [ ] Initialize SolutionValidator in widget constructor
 - [ ] Initialize StockfishClient in widget constructor (if enabled)
 - [ ] Initialize MoveCache in widget constructor (if enabled)
 - [ ] Add feature detection and fallback
-- [ ] Test: Components initialize only when enabled
+- [ ] Test: Components initialize correctly
+- [ ] Test: Components initialize only when enabled (Stockfish)
+- **Estimated**: 3 hours
+
+#### 2.7 Update Move Validation Logic
+- [ ] Integrate SolutionValidator into move validation
+- [ ] Update feedback messages to use i18n
+- [ ] Test alternative solution paths
+- [ ] Test translated messages
 - **Estimated**: 2 hours
 
-#### 2.7 Documentation
+#### 2.8 Documentation
+- [ ] Document SolutionValidator API
+- [ ] Document I18n API
 - [ ] Document StockfishClient API
 - [ ] Document MoveCache API
 - [ ] Add code examples
 - [ ] Document configuration options
-- **Estimated**: 1 hour
+- **Estimated**: 2 hours
 
 ### Phase 2 Acceptance Criteria
+- ✅ Alternative solutions work with multiple paths
+- ✅ I18n works with English and German
 - ✅ Stockfish API requests work reliably
 - ✅ Caching reduces API calls by >80%
 - ✅ Configuration is flexible and well-documented
 - ✅ Error handling is robust
-- ✅ No functionality added to UI yet (backend only)
+- ✅ Move validation correctly uses alternative solutions
+- ✅ All messages are properly translated
 
-**Phase 2 Total Estimated Time**: 15 hours (~2 days)
+**Phase 2 Total Estimated Time**: 20 hours (~3 days)
 
 ---
 
@@ -202,7 +251,9 @@
 - [ ] Format move notation (UCI to readable)
 - [ ] Style status message for counter-move
 - [ ] Add evaluation display (optional)
-- [ ] Test: Messages display correctly
+- [ ] Ensure all messages use i18n system
+- [ ] Test: Messages display correctly in English
+- [ ] Test: Messages display correctly in German
 - **Estimated**: 2 hours
 
 #### 3.5 Undo Move Logic
@@ -299,16 +350,20 @@
 - [ ] Test with tactical puzzles
 - [ ] Test with positional puzzles
 - [ ] Test with various starting positions
-- **Estimated**: 2 hours
+- [ ] Test puzzles with alternative solutions
+- [ ] Test in different languages
+- **Estimated**: 3 hours
 
 ### Phase 4 Acceptance Criteria
 - ✅ Stockfish counter-move integrated into move validation
+- ✅ Alternative solutions work correctly in all scenarios
+- ✅ I18n works correctly across all features
 - ✅ Feature works seamlessly with existing puzzle logic
 - ✅ Errors handled gracefully with fallbacks
 - ✅ Performance is acceptable (<2s response time)
-- ✅ File size increase is minimal (<10KB)
+- ✅ File size increase is minimal (<15KB)
 
-**Phase 4 Total Estimated Time**: 14 hours (~2 days)
+**Phase 4 Total Estimated Time**: 15 hours (~2 days)
 
 ---
 
@@ -329,30 +384,38 @@
 - **Estimated**: 3 hours
 
 #### 5.2 Add Demo Examples
+- [ ] Add puzzle with alternative solutions to demo page
+- [ ] Add i18n example (German language)
 - [ ] Add Stockfish-enabled puzzle to demo page
 - [ ] Add configuration examples
 - [ ] Add visual examples of counter-moves
-- [ ] Test: Demo page showcases feature well
-- **Estimated**: 2 hours
+- [ ] Test: Demo page showcases all features well
+- **Estimated**: 3 hours
 
 #### 5.3 Update README
+- [ ] Add alternative solutions section
+- [ ] Add i18n section with language examples
 - [ ] Add Stockfish feature section
-- [ ] Document configuration options
+- [ ] Document all configuration options
 - [ ] Add usage examples
 - [ ] Add FAQ section
 - [ ] Add troubleshooting guide
-- **Estimated**: 2 hours
+- **Estimated**: 3 hours
 
 #### 5.4 Update CLAUDE.md
-- [ ] Document new architecture
+- [ ] Document new modular architecture
 - [ ] Update project overview
+- [ ] Document alternative solutions system
+- [ ] Document i18n system
 - [ ] Document Stockfish integration
 - [ ] Add development guidelines
-- **Estimated**: 1 hour
+- **Estimated**: 2 hours
 
 #### 5.5 Create Configuration Guide
 - [ ] Document all data attributes
-- [ ] Provide configuration examples
+- [ ] Provide configuration examples for alternative solutions
+- [ ] Provide configuration examples for i18n
+- [ ] Provide configuration examples for Stockfish
 - [ ] Explain caching behavior
 - [ ] Explain performance considerations
 - **Estimated**: 2 hours
@@ -383,41 +446,46 @@
 #### 5.9 Final Testing
 - [ ] Run full test suite
 - [ ] Test all configuration combinations
-- [ ] Test edge cases
-- [ ] Test error scenarios
+- [ ] Test alternative solutions edge cases
+- [ ] Test i18n with missing translations
+- [ ] Test Stockfish error scenarios
 - [ ] Fix any remaining bugs
-- **Estimated**: 3 hours
+- **Estimated**: 4 hours
 
 ### Phase 5 Acceptance Criteria
 - ✅ Feature works across all major browsers
 - ✅ Documentation is complete and clear
-- ✅ Demo page showcases feature effectively
+- ✅ Demo page showcases all features effectively
+- ✅ Alternative solutions thoroughly tested
+- ✅ I18n works with proper fallbacks
 - ✅ Code is clean and well-commented
 - ✅ Performance is optimized
 - ✅ All tests pass
 
-**Phase 5 Total Estimated Time**: 20 hours (~3 days)
+**Phase 5 Total Estimated Time**: 24 hours (~3 days)
 
 ---
 
 ## Summary
 
 ### Total Estimated Time
-- **Phase 1**: 11 hours (~2 days)
-- **Phase 2**: 15 hours (~2 days)
-- **Phase 3**: 15 hours (~2 days)
-- **Phase 4**: 14 hours (~2 days)
-- **Phase 5**: 20 hours (~3 days)
+- **Phase 1**: 18 hours (~2.5 days) - Modular architecture + Alternative solutions + i18n
+- **Phase 2**: 20 hours (~3 days) - Stockfish API + Component integration
+- **Phase 3**: 15 hours (~2 days) - Visual feedback
+- **Phase 4**: 15 hours (~2 days) - Integration & testing
+- **Phase 5**: 24 hours (~3 days) - Polish, documentation & testing
 
-**Total**: 75 hours (~11 working days or ~3 weeks with buffer)
+**Total**: 92 hours (~13 working days or ~3 weeks with buffer)
 
 ### Milestones
 
-#### Milestone 1: Modular Architecture Complete
+#### Milestone 1: Core Features Complete
 **Date**: End of Week 1
 **Deliverables**:
 - ✅ Code split into modules
 - ✅ Build system updated
+- ✅ Alternative solutions working
+- ✅ I18n system working (English + German)
 - ✅ All existing functionality working
 
 #### Milestone 2: Stockfish Integration Complete
@@ -427,14 +495,15 @@
 - ✅ Caching system working
 - ✅ Visual feedback implemented
 - ✅ Basic integration complete
+- ✅ All features integrated with alternative solutions and i18n
 
 #### Milestone 3: Feature Complete & Released
 **Date**: End of Week 3
 **Deliverables**:
 - ✅ Full integration with move validation
 - ✅ Documentation complete
-- ✅ Demo examples added
-- ✅ Feature tested and ready for release
+- ✅ Demo examples added for all features
+- ✅ All features tested and ready for release
 
 ---
 
@@ -461,6 +530,11 @@
 2. **File Size Bloat**
    - Mitigation: Code splitting, tree shaking, minification
    - Fallback: Separate build for Stockfish-enabled version
+   - Note: Alternative solutions and i18n will add ~3-5KB
+
+3. **Complex Alternative Solution Patterns**
+   - Mitigation: Document limitations, provide clear examples
+   - Fallback: Support simple pipe-separated format only
 
 ### Low Risks
 1. **Browser Compatibility**
@@ -473,15 +547,21 @@
 
 ### Performance Metrics
 - ⚡ Counter-move displayed within 2 seconds (95th percentile)
-- 📦 Total file size increase < 10KB
+- 📦 Total file size increase < 15KB (including alternative solutions + i18n)
 - 💾 Cache hit rate > 80%
 - 🚫 API error rate < 1%
 
+### Feature Adoption Metrics
+- 🔀 Alternative solutions usage: >10% of puzzles
+- 🌍 Non-English language usage: >5% of widgets
+- 🤖 Stockfish integration: >20% of puzzles
+
 ### User Experience Metrics
-- ✅ Feature adoption rate > 20% of puzzles
+- ✅ Alternative solution discovery rate (users find correct path)
+- 🌐 I18n satisfaction (users use their language)
 - 👍 Positive user feedback
 - 🐛 Bug reports < 5 per month
-- 📈 Engagement increase with Stockfish puzzles
+- 📈 Engagement increase with new features
 
 ### Code Quality Metrics
 - 📝 Code coverage > 80%
@@ -494,6 +574,20 @@
 ## Post-Launch
 
 ### Version 1.1 Enhancements (Future)
+
+**Alternative Solutions & Puzzle Features**
+- [ ] Smart branching hints (show when multiple paths available)
+- [ ] Solution path statistics tracking
+- [ ] Visual indicators for alternative moves
+- [ ] Puzzle difficulty ratings based on complexity
+
+**Internationalization**
+- [ ] Additional languages: French, Spanish, Italian, Russian
+- [ ] RTL language support (Arabic, Hebrew)
+- [ ] Community translation system
+- [ ] Dynamic language switching
+
+**Stockfish Features**
 - [ ] Multiple counter-move suggestions (top 3)
 - [ ] Evaluation bar visualization
 - [ ] Hint system using Stockfish
@@ -506,6 +600,7 @@
 - [ ] Opening book integration
 - [ ] Endgame tablebase support
 - [ ] Custom Stockfish configurations
+- [ ] Advanced puzzle editor with alternative solution builder
 
 ---
 
@@ -514,6 +609,10 @@
 ### 2025-10-10
 - ✅ Initial roadmap created
 - ✅ Specification document completed
+- ✅ Added alternative solutions feature
+- ✅ Added internationalization (i18n) feature with German support
+- ✅ Updated roadmap with new features
+- ✅ Adjusted timeline: 92 hours total (~3 weeks)
 - 📝 Ready to begin Phase 1
 
 ---

@@ -19,6 +19,8 @@ New data attributes for the widget:
 <div class="chess-puzzle"
      data-fen="..."
      data-solution="..."
+     data-solution-alternatives="..."            <!-- Alternative solution paths (optional) -->
+     data-lang="en"                              <!-- Widget language (default: en) -->
      data-stockfish-enabled="true"              <!-- Enable Stockfish feedback -->
      data-stockfish-depth="12"                   <!-- Stockfish depth (default: 12) -->
      data-stockfish-timeout="2000"               <!-- Max wait time in ms (default: 2000) -->
@@ -42,12 +44,211 @@ src/
 ├── widget-solution.js           # Solution validation and move handling
 ├── widget-stockfish.js          # NEW: Stockfish API integration
 ├── widget-cache.js              # NEW: Move caching system
+├── widget-i18n.js               # NEW: Internationalization system
 └── widget-utils.js              # Utility functions
 ```
 
 Build process will concatenate these files in order during build.
 
-### 2. Stockfish API Integration
+### 2. Alternative Solutions System
+
+#### Puzzle Notation Standard
+Following the PGN (Portable Game Notation) convention used by popular puzzle databases like Lichess and Chess.com, we'll support multiple solution paths using the pipe `|` separator:
+
+```html
+<!-- Single solution path -->
+<div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+     data-solution="f1c4,d5c4,d1f3,e8e7">
+</div>
+
+<!-- Multiple alternative solutions (mate in 2 with different final moves) -->
+<div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+     data-solution="f1c4,d5c4,d1f3,e8e7|f1c4,d5c4,d1h5,e8e7">
+     <!-- Both paths lead to mate, just different queen moves -->
+</div>
+
+<!-- Branching at different points (move 2 has alternatives) -->
+<div class="chess-puzzle"
+     data-fen="..."
+     data-solution="e2e4,e7e5,g1f3|e2e4,e7e5,f1c4">
+     <!-- After e2e4 e7e5, both Nf3 and Bc4 are acceptable -->
+</div>
+```
+
+#### Implementation Class
+```javascript
+class SolutionValidator {
+  constructor(solutionString) {
+    this.solutionPaths = this.parseSolutions(solutionString);
+    this.currentMoveIndex = 0;
+    this.activePaths = [...this.solutionPaths]; // Clone all paths
+  }
+
+  parseSolutions(solutionString) {
+    // Split by pipe to get alternative paths
+    const paths = solutionString.split('|').map(path => path.trim());
+
+    // Convert each path to array of moves
+    return paths.map(path => path.split(',').map(move => move.trim()));
+  }
+
+  isValidMove(move, moveIndex) {
+    // Check if move is valid in ANY active path
+    const validPaths = this.activePaths.filter(path => {
+      if (moveIndex >= path.length) return false;
+      return path[moveIndex] === move;
+    });
+
+    if (validPaths.length > 0) {
+      // Update active paths to only those that matched
+      this.activePaths = validPaths;
+      return true;
+    }
+
+    return false;
+  }
+
+  getExpectedMoves(moveIndex) {
+    // Get all possible valid moves at this position
+    const expectedMoves = new Set();
+    this.activePaths.forEach(path => {
+      if (moveIndex < path.length) {
+        expectedMoves.add(path[moveIndex]);
+      }
+    });
+    return Array.from(expectedMoves);
+  }
+
+  isPuzzleSolved(moveIndex) {
+    // Puzzle is solved if we've reached the end of any active path
+    return this.activePaths.some(path => moveIndex >= path.length);
+  }
+
+  reset() {
+    this.currentMoveIndex = 0;
+    this.activePaths = [...this.solutionPaths];
+  }
+}
+```
+
+### 3. Internationalization (i18n) System
+
+#### Language Configuration
+```html
+<div class="chess-puzzle"
+     data-fen="..."
+     data-solution="..."
+     data-lang="de">  <!-- German -->
+</div>
+```
+
+Supported languages (initial release):
+- `en` - English (default)
+- `de` - German (Deutsch)
+
+#### Translation Structure
+```javascript
+class I18n {
+  constructor(lang = 'en') {
+    this.lang = lang;
+    this.translations = {
+      en: {
+        correct: 'Correct! Keep going...',
+        wrong: 'Try again!',
+        solved: 'Puzzle solved! Well done!',
+        stockfish_counter: 'Stockfish responds: {move}. Try again!',
+        loading: 'Thinking...',
+        invalid_move: 'Invalid move',
+        your_turn: 'Your turn',
+        waiting: 'Waiting for opponent...'
+      },
+      de: {
+        correct: 'Richtig! Weiter so...',
+        wrong: 'Versuche es noch einmal!',
+        solved: 'Puzzle gelöst! Gut gemacht!',
+        stockfish_counter: 'Stockfish antwortet: {move}. Versuche es noch einmal!',
+        loading: 'Denke nach...',
+        invalid_move: 'Ungültiger Zug',
+        your_turn: 'Du bist am Zug',
+        waiting: 'Warte auf Gegner...'
+      }
+    };
+  }
+
+  t(key, params = {}) {
+    // Get translation for current language, fallback to English
+    const translation = this.translations[this.lang]?.[key]
+                     || this.translations.en[key]
+                     || key;
+
+    // Replace placeholders like {move} with actual values
+    return translation.replace(/\{(\w+)\}/g, (match, param) => {
+      return params[param] || match;
+    });
+  }
+
+  setLanguage(lang) {
+    if (this.translations[lang]) {
+      this.lang = lang;
+      return true;
+    }
+    console.warn(`Language '${lang}' not supported, falling back to English`);
+    return false;
+  }
+
+  addLanguage(lang, translations) {
+    this.translations[lang] = translations;
+  }
+
+  getSupportedLanguages() {
+    return Object.keys(this.translations);
+  }
+}
+```
+
+#### Usage in Widget
+```javascript
+class ChessWidget {
+  constructor(element) {
+    // ... existing initialization
+
+    // Initialize i18n
+    const lang = element.getAttribute('data-lang') || 'en';
+    this.i18n = new I18n(lang);
+  }
+
+  showFeedback(type, params = {}) {
+    const message = this.i18n.t(type, params);
+    // Display message in status element
+    this.statusElement.textContent = message;
+  }
+}
+
+// Example usage:
+this.showFeedback('correct');
+this.showFeedback('stockfish_counter', { move: 'Qh5+' });
+```
+
+#### Extending with Custom Languages
+Users can add custom languages via JavaScript:
+
+```javascript
+// Add Spanish support
+ChessWidget.addLanguage('es', {
+  correct: '¡Correcto! Sigue así...',
+  wrong: '¡Inténtalo de nuevo!',
+  solved: '¡Puzzle resuelto! ¡Bien hecho!',
+  stockfish_counter: 'Stockfish responde: {move}. ¡Inténtalo de nuevo!',
+  loading: 'Pensando...',
+  invalid_move: 'Movimiento inválido',
+  your_turn: 'Tu turno',
+  waiting: 'Esperando al oponente...'
+});
+```
+
+### 4. Stockfish API Integration
 
 #### API Endpoint
 ```
@@ -86,7 +287,7 @@ class StockfishClient {
 }
 ```
 
-### 3. Caching System
+### 5. Caching System
 
 #### Cache Structure
 ```javascript
@@ -135,7 +336,7 @@ class MoveCache {
 }
 ```
 
-### 4. Visual Feedback
+### 6. Visual Feedback
 
 #### Move Animation
 ```javascript
@@ -177,9 +378,9 @@ showFeedback(type, moveData) {
 }
 ```
 
-### 5. Integration with Existing Move Validation
+### 7. Integration with Existing Move Validation
 
-Modify `onMove()` in widget-solution.js:
+Modify `onMove()` in widget-solution.js to use the SolutionValidator:
 
 ```javascript
 async onMove(orig, dest) {
@@ -188,17 +389,26 @@ async onMove(orig, dest) {
   if (!move) {
     // Invalid move - reject
     this.updateBoard();
+    this.showFeedback('invalid_move');
     return;
   }
 
-  // Check if this is the expected solution move
-  if (this.solution.length > 0) {
-    const expectedMove = this.solution[this.currentMoveIndex];
+  // Check if this is the expected solution move using SolutionValidator
+  if (this.solutionValidator) {
     const moveNotation = move.from + move.to + (move.promotion || '');
+    const isCorrect = this.solutionValidator.isValidMove(moveNotation, this.currentMoveIndex)
+                   || this.solutionValidator.isValidMove(move.san, this.currentMoveIndex);
 
-    if (moveNotation === expectedMove || move.san === expectedMove) {
+    if (isCorrect) {
       // Correct move
-      this.handleCorrectMove();
+      this.currentMoveIndex++;
+
+      // Check if puzzle is solved
+      if (this.solutionValidator.isPuzzleSolved(this.currentMoveIndex)) {
+        this.handlePuzzleSolved();
+      } else {
+        this.handleCorrectMove();
+      }
     } else {
       // Wrong move - NEW: Show Stockfish counter-move if enabled
       if (this.stockfish && this.config.stockfishEnabled) {
@@ -256,6 +466,7 @@ async function buildJS() {
     // Read widget source files in order
     const widgetFiles = [
       'src/widget-utils.js',
+      'src/widget-i18n.js',
       'src/widget-cache.js',
       'src/widget-stockfish.js',
       'src/widget-board.js',
@@ -355,8 +566,36 @@ async function buildJS() {
 ## Documentation Updates
 
 ### README.md
-Add section:
+Add sections:
+
 ```markdown
+### Alternative Solutions
+
+Puzzles can accept multiple solution paths using the pipe `|` separator:
+
+```html
+<!-- Multiple ways to achieve mate -->
+<div class="chess-puzzle"
+     data-fen="..."
+     data-solution="e2e4,e7e5,g1f3|e2e4,e7e5,f1c4">
+     <!-- Both Nf3 and Bc4 are correct after e2e4 e7e5 -->
+</div>
+```
+
+### Internationalization
+
+Set the widget language with `data-lang`:
+
+```html
+<div class="chess-puzzle"
+     data-fen="..."
+     data-solution="..."
+     data-lang="de">  <!-- German -->
+</div>
+```
+
+Supported languages: English (en), German (de)
+
 ### Stockfish Integration (Optional)
 
 Enable Stockfish-powered feedback for incorrect moves:
@@ -365,6 +604,7 @@ Enable Stockfish-powered feedback for incorrect moves:
 <div class="chess-puzzle"
      data-fen="rnbqkb1r/ppp2ppp/5n2/3pp3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 4"
      data-solution="f1c4,d5c4,d1f3,e8e7"
+     data-lang="en"
      data-stockfish-enabled="true"
      data-stockfish-depth="12">
 </div>
@@ -378,6 +618,18 @@ Update project architecture section to reflect modular structure.
 
 ## Future Enhancements
 
+### Puzzle Features
+1. **Smart branching hints**: Show visual hint when multiple solutions are available
+2. **Solution path statistics**: Track which alternative paths users take most often
+3. **Progressive difficulty**: Reduce alternative solutions for harder puzzles
+
+### Internationalization
+1. **Additional languages**: French, Spanish, Italian, Russian, Chinese
+2. **RTL support**: Right-to-left languages (Arabic, Hebrew)
+3. **Community translations**: Allow users to submit translations
+4. **Dynamic language switching**: Change language without reloading widget
+
+### Stockfish Features
 1. **Multiple counter-moves**: Show top 3 moves from Stockfish
 2. **Evaluation bar**: Show position evaluation
 3. **Hint system**: Use Stockfish to provide hints
@@ -386,8 +638,18 @@ Update project architecture section to reflect modular structure.
 
 ## Success Metrics
 
-- Feature adoption: % of puzzles using Stockfish
+### Feature Adoption
+- Alternative solutions usage: % of puzzles with multiple paths
+- Internationalization: % of non-English language usage
+- Stockfish integration: % of puzzles using Stockfish
+
+### Performance
 - Cache hit rate: Should be >80% for repeated attempts
-- Performance: Counter-move shown within 2 seconds
+- Counter-move response: Shown within 2 seconds
 - File size: Keep total under 200KB
-- Error rate: <1% API failures
+- API error rate: <1% failures
+
+### User Experience
+- Alternative solution success rate: Users find correct path
+- Language fallback rate: How often users rely on English fallback
+- Feedback clarity: Positive user feedback on messages
