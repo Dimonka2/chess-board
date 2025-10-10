@@ -3421,208 +3421,562 @@ exports.xoroshiro128 = xoroshiro128;
 
 // Chess Widget
 /**
- * Chess Widget - Easy-to-install chess puzzle widget
- * Uses chessground and chess.js for interactive chess puzzles
- * All dependencies bundled - no external CDN calls
+ * Utility Functions for Chess Widget
+ * Common helper functions and constants
+ */
+
+/**
+ * Delay/sleep utility for async operations
+ * @param {number} ms - Milliseconds to wait
+ * @returns {Promise} Promise that resolves after delay
+ */
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Format a move for display (convert UCI to human-readable if needed)
+ * @param {string} move - Move notation
+ * @returns {string} Formatted move
+ */
+function formatMove(move) {
+  // For now, just return the move as-is
+  // Could be enhanced to convert UCI to algebraic notation
+  return move;
+}
+
+/**
+ * Deep clone an object
+ * @param {object} obj - Object to clone
+ * @returns {object} Cloned object
+ */
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/**
+ * Check if value is empty (null, undefined, empty string, empty array)
+ * @param {any} value - Value to check
+ * @returns {boolean} True if empty
+ */
+function isEmpty(value) {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === 'object') return Object.keys(value).length === 0;
+  return false;
+}
+
+/**
+ * Parse boolean from string (handles 'true'/'false' strings)
+ * @param {string|boolean} value - Value to parse
+ * @param {boolean} defaultValue - Default if undefined
+ * @returns {boolean} Parsed boolean
+ */
+function parseBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null) return defaultValue;
+  if (typeof value === 'boolean') return value;
+  return value === 'true' || value === '1' || value === 'yes';
+}
+
+/**
+ * Parse integer with default value
+ * @param {string|number} value - Value to parse
+ * @param {number} defaultValue - Default if invalid
+ * @returns {number} Parsed integer
+ */
+function parseInteger(value, defaultValue = 0) {
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
+
+/**
+ * Internationalization (i18n) System
+ * Provides multi-language support for the chess widget
+ */
+
+class I18n {
+  constructor(lang = 'en') {
+    this.lang = lang;
+    this.translations = {
+      en: {
+        correct: 'Correct! Keep going...',
+        wrong: 'Try again!',
+        solved: 'Puzzle solved! Well done!',
+        stockfish_counter: 'Stockfish responds: {move}. Try again!',
+        loading: 'Thinking...',
+        invalid_move: 'Invalid move',
+        your_turn: 'Your turn',
+        make_your_move: 'Make your move',
+        waiting: 'Waiting for opponent...'
+      },
+      de: {
+        correct: 'Richtig! Weiter so...',
+        wrong: 'Versuche es noch einmal!',
+        solved: 'Puzzle gelöst! Gut gemacht!',
+        stockfish_counter: 'Stockfish antwortet: {move}. Versuche es noch einmal!',
+        loading: 'Denke nach...',
+        invalid_move: 'Ungültiger Zug',
+        your_turn: 'Du bist am Zug',
+        make_your_move: 'Mache deinen Zug',
+        waiting: 'Warte auf Gegner...'
+      }
+    };
+  }
+
+  /**
+   * Translate a key with optional parameter substitution
+   * @param {string} key - Translation key
+   * @param {object} params - Optional parameters for placeholder replacement
+   * @returns {string} Translated string
+   */
+  t(key, params = {}) {
+    // Get translation for current language, fallback to English
+    const translation = this.translations[this.lang]?.[key]
+                     || this.translations.en[key]
+                     || key;
+
+    // Replace placeholders like {move} with actual values
+    return translation.replace(/\{(\w+)\}/g, (match, param) => {
+      return params[param] || match;
+    });
+  }
+
+  /**
+   * Set the current language
+   * @param {string} lang - Language code (e.g., 'en', 'de')
+   * @returns {boolean} Success status
+   */
+  setLanguage(lang) {
+    if (this.translations[lang]) {
+      this.lang = lang;
+      return true;
+    }
+    console.warn(`Language '${lang}' not supported, falling back to English`);
+    return false;
+  }
+
+  /**
+   * Add a custom language
+   * @param {string} lang - Language code
+   * @param {object} translations - Translation dictionary
+   */
+  addLanguage(lang, translations) {
+    this.translations[lang] = translations;
+  }
+
+  /**
+   * Get list of supported languages
+   * @returns {string[]} Array of language codes
+   */
+  getSupportedLanguages() {
+    return Object.keys(this.translations);
+  }
+}
+
+// Static method to add languages globally
+I18n.addLanguage = function(lang, translations) {
+  // This will be available for users to extend before widget initialization
+  if (!I18n._customLanguages) {
+    I18n._customLanguages = {};
+  }
+  I18n._customLanguages[lang] = translations;
+};
+
+
+/**
+ * Solution Validator - Handles alternative solution paths
+ * Supports multiple solution paths separated by pipe (|) character
+ * Following Lichess/Chess.com puzzle notation standards
+ */
+
+class SolutionValidator {
+  constructor(solutionString) {
+    this.solutionPaths = this.parseSolutions(solutionString);
+    this.currentMoveIndex = 0;
+    this.activePaths = [...this.solutionPaths]; // Clone all paths
+  }
+
+  /**
+   * Parse solution string into multiple paths
+   * @param {string} solutionString - Solution moves, optionally separated by |
+   * @returns {Array<Array<string>>} Array of solution paths
+   */
+  parseSolutions(solutionString) {
+    if (!solutionString || solutionString.trim() === '') {
+      return [];
+    }
+
+    // Split by pipe to get alternative paths
+    const paths = solutionString.split('|').map(path => path.trim());
+
+    // Convert each path to array of moves
+    return paths.map(path =>
+      path.split(',')
+          .map(move => move.trim())
+          .filter(Boolean)
+    );
+  }
+
+  /**
+   * Check if a move is valid at the current position
+   * @param {string} move - Move notation (UCI or SAN)
+   * @param {number} moveIndex - Current move index
+   * @returns {boolean} True if move is valid in any active path
+   */
+  isValidMove(move, moveIndex) {
+    // Check if move is valid in ANY active path
+    const validPaths = this.activePaths.filter(path => {
+      if (moveIndex >= path.length) return false;
+      return path[moveIndex] === move;
+    });
+
+    if (validPaths.length > 0) {
+      // Update active paths to only those that matched
+      this.activePaths = validPaths;
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Get all expected moves at the current position
+   * @param {number} moveIndex - Current move index
+   * @returns {string[]} Array of valid move notations
+   */
+  getExpectedMoves(moveIndex) {
+    // Get all possible valid moves at this position
+    const expectedMoves = new Set();
+    this.activePaths.forEach(path => {
+      if (moveIndex < path.length) {
+        expectedMoves.add(path[moveIndex]);
+      }
+    });
+    return Array.from(expectedMoves);
+  }
+
+  /**
+   * Check if puzzle is solved
+   * @param {number} moveIndex - Current move index
+   * @returns {boolean} True if reached end of any active path
+   */
+  isPuzzleSolved(moveIndex) {
+    // Puzzle is solved if we've reached the end of any active path
+    return this.activePaths.some(path => moveIndex >= path.length);
+  }
+
+  /**
+   * Get the number of alternative paths still available
+   * @returns {number} Number of active solution paths
+   */
+  getActivePathCount() {
+    return this.activePaths.length;
+  }
+
+  /**
+   * Check if there are multiple solution paths available
+   * @returns {boolean} True if multiple paths exist
+   */
+  hasMultiplePaths() {
+    return this.solutionPaths.length > 1;
+  }
+
+  /**
+   * Reset the validator to initial state
+   */
+  reset() {
+    this.currentMoveIndex = 0;
+    this.activePaths = [...this.solutionPaths];
+  }
+
+  /**
+   * Get total number of solution paths defined
+   * @returns {number} Total paths
+   */
+  getTotalPaths() {
+    return this.solutionPaths.length;
+  }
+
+  /**
+   * Check if solution validator has any solutions
+   * @returns {boolean} True if solutions exist
+   */
+  hasSolution() {
+    return this.solutionPaths.length > 0 && this.solutionPaths[0].length > 0;
+  }
+}
+
+
+/**
+ * ChessWidget Core - Main class definition and initialization
+ * Constructor and initialization logic
  */
 
 class ChessWidget {
   constructor(element) {
     this.element = element;
-    this.fen = element.dataset.fen;
-    this.solution = element.dataset.solution
-      ? element.dataset.solution.split(',').map(s => s.trim()).filter(Boolean)
-      : [];
-    this.width = element.dataset.width || 400;
-    this.theme = element.dataset.theme || 'blue';
-    this.autoFlip = element.dataset.autoFlip === 'true';
-    this.fixedOrientation = element.dataset.orientation || null; // 'white', 'black', or null for auto
 
+    // Parse configuration from data attributes
+    this.parseConfiguration(element);
+
+    // Initialize i18n
+    const lang = element.dataset.lang || 'en';
+    this.i18n = new I18n(lang);
+
+    // Apply custom languages if any were registered
+    if (I18n._customLanguages) {
+      Object.keys(I18n._customLanguages).forEach(langKey => {
+        this.i18n.addLanguage(langKey, I18n._customLanguages[langKey]);
+      });
+      // Reapply language in case a custom one was specified
+      this.i18n.setLanguage(lang);
+    }
+
+    // Initialize solution validator (supports alternative solutions)
+    const solutionString = element.dataset.solution || '';
+    this.solutionValidator = solutionString ? new SolutionValidator(solutionString) : null;
+
+    // Initialize state
     this.currentMoveIndex = 0;
     this.chess = null;
     this.chessground = null;
 
     this.init();
   }
-  
+
+  /**
+   * Parse configuration from element data attributes
+   * @param {HTMLElement} element - Widget element
+   */
+  parseConfiguration(element) {
+    // Board configuration
+    this.fen = element.dataset.fen;
+    this.width = parseInteger(element.dataset.width, 400);
+    this.theme = element.dataset.theme || 'blue';
+    this.autoFlip = parseBoolean(element.dataset.autoFlip, false);
+    this.fixedOrientation = element.dataset.orientation || null; // 'white', 'black', or null for auto
+
+    // Stockfish configuration (for future Phase 2)
+    this.stockfishEnabled = parseBoolean(element.dataset.stockfishEnabled, false);
+    this.stockfishDepth = parseInteger(element.dataset.stockfishDepth, 12);
+    this.stockfishTimeout = parseInteger(element.dataset.stockfishTimeout, 2000);
+    this.stockfishShowArrow = parseBoolean(element.dataset.stockfishShowArrow, true);
+    this.stockfishShowAnimation = parseBoolean(element.dataset.stockfishShowAnimation, true);
+    this.stockfishCacheEnabled = parseBoolean(element.dataset.stockfishCacheEnabled, true);
+  }
+
+  /**
+   * Initialize the chess widget
+   */
   init() {
     try {
       // Create chess instance
       this.chess = new Chess(this.fen);
-      
+
       // Create board container
       this.createBoardContainer();
-      
+
       // Initialize chessground
       this.initChessground();
-      
+
       // Create controls
       this.createControls();
-      
+
       console.log('Chess widget initialized successfully');
     } catch (error) {
       console.error('Error initializing chess widget:', error);
     }
   }
-  
-  createBoardContainer() {
-    this.element.innerHTML = `
-      <div class="chess-widget-container">
-        <div class="chess-widget-board" style="width: ${this.width}px; height: ${this.width}px;"></div>
-        <div class="chess-widget-controls">
-          <button class="chess-widget-reset">Reset</button>
-          <div class="chess-widget-status">Make your move</div>
-        </div>
+
+  /**
+   * Static method to initialize all chess widgets on the page
+   */
+  static init() {
+    // Initialize all chess widgets on the page
+    const widgets = document.querySelectorAll('.chess-puzzle');
+    widgets.forEach(widget => new ChessWidget(widget));
+  }
+}
+
+
+/**
+ * Board Management Methods for ChessWidget
+ * Handles board rendering, orientation, and Chessground integration
+ */
+
+/**
+ * Create the DOM structure for the board and controls
+ */
+ChessWidget.prototype.createBoardContainer = function() {
+  this.element.innerHTML = `
+    <div class="chess-widget-container">
+      <div class="chess-widget-board" style="width: ${this.width}px; height: ${this.width}px;"></div>
+      <div class="chess-widget-controls">
+        <button class="chess-widget-reset">Reset</button>
+        <div class="chess-widget-status">${this.i18n.t('make_your_move')}</div>
       </div>
-    `;
-    
-    this.boardElement = this.element.querySelector('.chess-widget-board');
-    this.statusElement = this.element.querySelector('.chess-widget-status');
-    this.resetButton = this.element.querySelector('.chess-widget-reset');
+    </div>
+  `;
+
+  this.boardElement = this.element.querySelector('.chess-widget-board');
+  this.statusElement = this.element.querySelector('.chess-widget-status');
+  this.resetButton = this.element.querySelector('.chess-widget-reset');
+};
+
+/**
+ * Determine board orientation based on settings
+ * @returns {string} 'white' or 'black'
+ */
+ChessWidget.prototype.getOrientation = function() {
+  // If fixedOrientation is set, always use it
+  if (this.fixedOrientation) {
+    return this.fixedOrientation;
   }
-  
-  getOrientation() {
-    // If fixedOrientation is set, always use it
-    if (this.fixedOrientation) {
-      return this.fixedOrientation;
+  // Otherwise, use autoFlip logic
+  const currentTurn = this.chess.turn();
+  return this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
+};
+
+/**
+ * Initialize Chessground board
+ */
+ChessWidget.prototype.initChessground = function() {
+  console.log('initChessground called with FEN:', this.fen);
+
+  // Determine board orientation
+  const currentTurn = this.chess.turn();
+  const orientation = this.getOrientation();
+
+  const config = {
+    fen: this.fen,
+    orientation: orientation,
+    turnColor: currentTurn === 'w' ? 'white' : 'black',
+    coordinates: true,
+    ranksPosition: 'right', // Show rank numbers on right side (Lichess style)
+    movable: {
+      color: currentTurn === 'w' ? 'white' : 'black',
+      free: false,
+      dests: this.getDests()
+    },
+    events: {
+      move: (orig, dest) => this.onMove(orig, dest)
     }
-    // Otherwise, use autoFlip logic
-    const currentTurn = this.chess.turn();
-    return this.autoFlip && currentTurn === 'b' ? 'black' : 'white';
-  }
+  };
 
-  initChessground() {
-    console.log('initChessground called with FEN:', this.fen);
+  console.log('Chessground config:', config);
 
-    // Determine board orientation
-    const currentTurn = this.chess.turn();
-    const orientation = this.getOrientation();
+  try {
+    // Initialize Chessground (available globally)
+    if (typeof Chessground === 'function') {
+      this.chessground = Chessground(this.boardElement, config);
+      console.log('Chessground instance created:', this.chessground);
 
-    const config = {
-      fen: this.fen,
-      orientation: orientation,
-      turnColor: currentTurn === 'w' ? 'white' : 'black',
-      coordinates: true,
-      ranksPosition: 'right', // Show rank numbers on right side (Lichess style)
-      movable: {
-        color: currentTurn === 'w' ? 'white' : 'black',
-        free: false,
-        dests: this.getDests()
-      },
-      events: {
-        move: (orig, dest) => this.onMove(orig, dest)
-      }
-    };
-    
-    console.log('Chessground config:', config);
-    
-    try {
-      // Initialize Chessground (available globally)
-      if (typeof Chessground === 'function') {
-        this.chessground = Chessground(this.boardElement, config);
-        console.log('Chessground instance created:', this.chessground);
-        
-        // Force set the position
-        if (this.chessground && this.chessground.set) {
-          console.log('Setting FEN position manually:', this.fen);
-          this.chessground.set({ fen: this.fen });
-        }
-      } else {
-        console.error('Chessground not available');
-        return;
-      }
-    } catch (error) {
-      console.error('Error creating chessground:', error);
-    }
-  }
-  
-  createControls() {
-    // Add reset button handler
-    this.resetButton.addEventListener('click', () => this.reset());
-  }
-  
-  getDests() {
-    const dests = new Map();
-    const moves = this.chess.moves({ verbose: true });
-    
-    moves.forEach(move => {
-      if (!dests.has(move.from)) {
-        dests.set(move.from, []);
-      }
-      dests.get(move.from).push(move.to);
-    });
-    
-    return dests;
-  }
-  
-  onMove(orig, dest) {
-    const move = this.chess.move({ from: orig, to: dest });
-
-    if (!move) {
-      // Invalid move
-      const currentTurn = this.chess.turn();
-      this.chessground.set({
-        fen: this.chess.fen(),
-        orientation: this.getOrientation(),
-        turnColor: currentTurn === 'w' ? 'white' : 'black',
-        movable: {
-          color: currentTurn === 'w' ? 'white' : 'black',
-          dests: this.getDests()
-        }
-      });
-      return;
-    }
-    
-    // Check if this is the expected solution move
-    if (this.solution.length > 0) {
-      const expectedMove = this.solution[this.currentMoveIndex];
-      const moveNotation = move.from + move.to + (move.promotion || '');
-      
-      if (moveNotation === expectedMove || move.san === expectedMove) {
-        // Correct move
-        this.currentMoveIndex++;
-        this.showFeedback('correct');
-
-        if (this.currentMoveIndex >= this.solution.length) {
-          this.showFeedback('solved');
-          this.chessground.set({ movable: { color: undefined } });
-        } else {
-          // Check if there's an opponent's response to play automatically
-          const nextMove = this.solution[this.currentMoveIndex];
-          if (nextMove) {
-            // Play opponent's response after a short delay for better UX
-            setTimeout(() => {
-              this.playAutomaticMove(nextMove);
-            }, 500);
-          } else {
-            this.updateBoard();
-          }
-        }
-      } else {
-        // Wrong move
-        this.showFeedback('wrong');
-        this.chess.undo();
-        const currentTurn = this.chess.turn();
-
-        this.chessground.set({
-          fen: this.chess.fen(),
-          orientation: this.getOrientation(),
-          turnColor: currentTurn === 'w' ? 'white' : 'black',
-          movable: {
-            color: currentTurn === 'w' ? 'white' : 'black',
-            dests: this.getDests()
-          }
-        });
+      // Force set the position
+      if (this.chessground && this.chessground.set) {
+        console.log('Setting FEN position manually:', this.fen);
+        this.chessground.set({ fen: this.fen });
       }
     } else {
-      // Free play mode
-      this.updateBoard();
+      console.error('Chessground not available');
+      return;
     }
+  } catch (error) {
+    console.error('Error creating chessground:', error);
   }
-  
-  updateBoard() {
-    const currentTurn = this.chess.turn();
+};
 
+/**
+ * Get legal destinations for all pieces
+ * @returns {Map} Map of square -> legal destinations
+ */
+ChessWidget.prototype.getDests = function() {
+  const dests = new Map();
+  const moves = this.chess.moves({ verbose: true });
+
+  moves.forEach(move => {
+    if (!dests.has(move.from)) {
+      dests.set(move.from, []);
+    }
+    dests.get(move.from).push(move.to);
+  });
+
+  return dests;
+};
+
+/**
+ * Update board state after a move
+ */
+ChessWidget.prototype.updateBoard = function() {
+  const currentTurn = this.chess.turn();
+
+  this.chessground.set({
+    fen: this.chess.fen(),
+    orientation: this.getOrientation(),
+    turnColor: currentTurn === 'w' ? 'white' : 'black',
+    movable: {
+      color: currentTurn === 'w' ? 'white' : 'black',
+      dests: this.getDests()
+    }
+  });
+};
+
+/**
+ * Create control buttons and event handlers
+ */
+ChessWidget.prototype.createControls = function() {
+  // Add reset button handler
+  this.resetButton.addEventListener('click', () => this.reset());
+};
+
+/**
+ * Reset the puzzle to initial state
+ */
+ChessWidget.prototype.reset = function() {
+  this.chess = new Chess(this.fen);
+  this.currentMoveIndex = 0;
+
+  // Reset solution validator if it exists
+  if (this.solutionValidator) {
+    this.solutionValidator.reset();
+  }
+
+  // Determine initial orientation after reset
+  const currentTurn = this.chess.turn();
+
+  this.chessground.set({
+    fen: this.fen,
+    orientation: this.getOrientation(),
+    turnColor: currentTurn === 'w' ? 'white' : 'black',
+    lastMove: undefined,
+    movable: {
+      color: currentTurn === 'w' ? 'white' : 'black',
+      dests: this.getDests()
+    }
+  });
+
+  this.statusElement.textContent = this.i18n.t('make_your_move');
+  this.statusElement.className = 'chess-widget-status';
+};
+
+
+/**
+ * Solution Validation and Move Handling
+ * Handles move validation, automatic moves, and puzzle feedback
+ */
+
+/**
+ * Handle a move made by the user
+ * @param {string} orig - Origin square
+ * @param {string} dest - Destination square
+ */
+ChessWidget.prototype.onMove = function(orig, dest) {
+  const move = this.chess.move({ from: orig, to: dest });
+
+  if (!move) {
+    // Invalid move - reject and reset board
+    const currentTurn = this.chess.turn();
     this.chessground.set({
       fen: this.chess.fen(),
       orientation: this.getOrientation(),
@@ -3632,93 +3986,162 @@ class ChessWidget {
         dests: this.getDests()
       }
     });
+    this.showFeedback('invalid_move');
+    return;
   }
 
-  playAutomaticMove(moveNotation) {
-    // Try to parse and play the move (supports both UCI and SAN notation)
-    let move = null;
+  // Check if this is the expected solution move using SolutionValidator
+  if (this.solutionValidator && this.solutionValidator.hasSolution()) {
+    const moveNotation = move.from + move.to + (move.promotion || '');
+    const isCorrect = this.solutionValidator.isValidMove(moveNotation, this.currentMoveIndex)
+                   || this.solutionValidator.isValidMove(move.san, this.currentMoveIndex);
 
-    // Try SAN notation first (e.g., Nf3, e4)
-    try {
-      move = this.chess.move(moveNotation);
-    } catch (e) {
-      // SAN failed, try UCI notation
-    }
-
-    // If SAN failed, try UCI notation (e.g., e2e4)
-    if (!move && moveNotation.length >= 4) {
-      const from = moveNotation.substring(0, 2);
-      const to = moveNotation.substring(2, 4);
-      const promotion = moveNotation.length > 4 ? moveNotation[4] : undefined;
-      move = this.chess.move({ from, to, promotion });
-    }
-
-    if (move) {
-      // Animate the move on the board for smooth visual effect
-      this.chessground.move(move.from, move.to);
-
-      // Increment move index
+    if (isCorrect) {
+      // Correct move
       this.currentMoveIndex++;
 
-      // Check if puzzle is complete
-      if (this.currentMoveIndex >= this.solution.length) {
-        this.showFeedback('solved');
-        this.chessground.set({ movable: { color: undefined } });
+      // Check if puzzle is solved
+      if (this.solutionValidator.isPuzzleSolved(this.currentMoveIndex)) {
+        this.handlePuzzleSolved();
       } else {
-        // Update board state for next user move
-        this.updateBoard();
+        this.handleCorrectMove();
       }
+    } else {
+      // Wrong move
+      this.handleWrongMove();
+    }
+  } else {
+    // Free play mode (no solution defined)
+    this.updateBoard();
+  }
+};
+
+/**
+ * Handle a correct move
+ */
+ChessWidget.prototype.handleCorrectMove = function() {
+  this.showFeedback('correct');
+
+  // Check if there's an opponent's response to play automatically
+  const expectedMoves = this.solutionValidator.getExpectedMoves(this.currentMoveIndex);
+
+  if (expectedMoves.length > 0) {
+    const nextMove = expectedMoves[0]; // Take first expected move (could be only one)
+
+    // Play opponent's response after a short delay for better UX
+    setTimeout(() => {
+      this.playAutomaticMove(nextMove);
+    }, 500);
+  } else {
+    this.updateBoard();
+  }
+};
+
+/**
+ * Handle a wrong move
+ */
+ChessWidget.prototype.handleWrongMove = function() {
+  this.showFeedback('wrong');
+  this.chess.undo();
+  const currentTurn = this.chess.turn();
+
+  this.chessground.set({
+    fen: this.chess.fen(),
+    orientation: this.getOrientation(),
+    turnColor: currentTurn === 'w' ? 'white' : 'black',
+    movable: {
+      color: currentTurn === 'w' ? 'white' : 'black',
+      dests: this.getDests()
+    }
+  });
+};
+
+/**
+ * Handle puzzle completion
+ */
+ChessWidget.prototype.handlePuzzleSolved = function() {
+  this.showFeedback('solved');
+  this.chessground.set({ movable: { color: undefined } });
+};
+
+/**
+ * Play an automatic move (opponent's response)
+ * @param {string} moveNotation - Move in UCI or SAN notation
+ */
+ChessWidget.prototype.playAutomaticMove = function(moveNotation) {
+  // Try to parse and play the move (supports both UCI and SAN notation)
+  let move = null;
+
+  // Try SAN notation first (e.g., Nf3, e4)
+  try {
+    move = this.chess.move(moveNotation);
+  } catch (e) {
+    // SAN failed, try UCI notation
+  }
+
+  // If SAN failed, try UCI notation (e.g., e2e4)
+  if (!move && moveNotation.length >= 4) {
+    const from = moveNotation.substring(0, 2);
+    const to = moveNotation.substring(2, 4);
+    const promotion = moveNotation.length > 4 ? moveNotation[4] : undefined;
+    move = this.chess.move({ from, to, promotion });
+  }
+
+  if (move) {
+    // Animate the move on the board for smooth visual effect
+    this.chessground.move(move.from, move.to);
+
+    // Increment move index
+    this.currentMoveIndex++;
+
+    // Check if puzzle is complete
+    if (this.solutionValidator.isPuzzleSolved(this.currentMoveIndex)) {
+      this.handlePuzzleSolved();
+    } else {
+      // Update board state for next user move
+      this.updateBoard();
     }
   }
-  
-  showFeedback(type) {
-    const messages = {
-      correct: 'Correct! Keep going...',
-      wrong: 'Try again!',
-      solved: 'Puzzle solved! Well done!'
-    };
-    
-    this.statusElement.textContent = messages[type];
-    this.statusElement.className = `chess-widget-status ${type}`;
-    
-    if (type !== 'solved') {
-      setTimeout(() => {
-        this.statusElement.textContent = 'Make your move';
-        this.statusElement.className = 'chess-widget-status';
-      }, 2000);
-    }
-  }
-  
-  reset() {
-    this.chess = new Chess(this.fen);
-    this.currentMoveIndex = 0;
+};
 
-    // Determine initial orientation after reset
-    const currentTurn = this.chess.turn();
+/**
+ * Show feedback message to user
+ * @param {string} type - Feedback type (correct, wrong, solved, etc.)
+ * @param {object} params - Optional parameters for message interpolation
+ */
+ChessWidget.prototype.showFeedback = function(type, params = {}) {
+  const message = this.i18n.t(type, params);
 
-    this.chessground.set({
-      fen: this.fen,
-      orientation: this.getOrientation(),
-      turnColor: currentTurn === 'w' ? 'white' : 'black',
-      lastMove: undefined,
-      movable: {
-        color: currentTurn === 'w' ? 'white' : 'black',
-        dests: this.getDests()
-      }
-    });
-    
-    this.statusElement.textContent = 'Make your move';
-    this.statusElement.className = 'chess-widget-status';
-  }
-  
-  static init() {
-    // Initialize all chess widgets on the page
-    const widgets = document.querySelectorAll('.chess-puzzle');
-    widgets.forEach(widget => new ChessWidget(widget));
-  }
-}
+  this.statusElement.textContent = message;
+  this.statusElement.className = `chess-widget-status ${type}`;
 
-// Make available on window early so other scripts can reference it
+  if (type !== 'solved' && type !== 'invalid_move') {
+    setTimeout(() => {
+      this.statusElement.textContent = this.i18n.t('make_your_move');
+      this.statusElement.className = 'chess-widget-status';
+    }, 2000);
+  }
+};
+
+
+/**
+ * Chess Widget - Easy-to-install chess puzzle widget
+ * Uses chessground and chess.js for interactive chess puzzles
+ * All dependencies bundled - no external CDN calls
+ *
+ * This file serves as the main entry point.
+ * The actual implementation is split across multiple modules:
+ * - widget-utils.js: Utility functions
+ * - widget-i18n.js: Internationalization
+ * - widget-solution-validator.js: Alternative solutions support
+ * - widget-core.js: Core ChessWidget class
+ * - widget-board.js: Board rendering and management
+ * - widget-solution.js: Solution validation and move handling
+ *
+ * Build process concatenates all files in the correct order.
+ */
+
+// Make ChessWidget available on window object
 try { window.ChessWidget = ChessWidget; } catch (_) {}
 
 // Auto-initialize if DOM is ready
@@ -3729,4 +4152,6 @@ if (typeof document !== 'undefined') {
     ChessWidget.init();
   }
 }
+
+
 

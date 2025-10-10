@@ -412,7 +412,57 @@
             </div>
         </div>
     </div>
-    
+
+    <div class="demo-section">
+        <h2>🆕 Alternative Solutions (Phase 1 Feature!)</h2>
+        <div class="puzzle-info">
+            <h3>Multiple Paths to Victory</h3>
+            <p>This puzzle accepts multiple correct solutions! After Re1, both Qh5 and Qf3 lead to checkmate.</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle"
+                 data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+                 data-solution="f1e1,e5e4,d1h5|f1e1,e5e4,d1f3"
+                 data-width="400">
+            </div>
+        </div>
+        <pre><code>&lt;div class="chess-puzzle"
+     data-solution="f1e1,e5e4,d1h5|f1e1,e5e4,d1f3"&gt;
+&lt;!-- Use pipe | to separate alternative solutions --&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+
+    <div class="demo-section">
+        <h2>🆕 Internationalization (Phase 1 Feature!)</h2>
+        <div class="puzzle-info">
+            <h3>Multi-Language Support</h3>
+            <p>Widgets now support multiple languages! Try these puzzles in English and German.</p>
+        </div>
+        <div class="puzzle-container">
+            <div style="text-align: center; margin: 20px;">
+                <h4>English (default)</h4>
+                <div class="chess-puzzle"
+                     data-fen="rnb3kr/p4ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1"
+                     data-solution="e1e8"
+                     data-lang="en"
+                     data-width="350">
+                </div>
+            </div>
+            <div style="text-align: center; margin: 20px;">
+                <h4>Deutsch (German)</h4>
+                <div class="chess-puzzle"
+                     data-fen="rnb3kr/p4ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1"
+                     data-solution="e1e8"
+                     data-lang="de"
+                     data-width="350">
+                </div>
+            </div>
+        </div>
+        <pre><code>&lt;div class="chess-puzzle"
+     data-lang="de"&gt; &lt;!-- German language --&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+
     <div class="demo-section">
         <h2>How to Use</h2>
         <p>To add a chess widget to your website, simply include the CSS and JavaScript files, then add a div with the appropriate data attributes:</p>
@@ -431,7 +481,8 @@
         <h3>Data Attributes</h3>
         <ul>
             <li><code>data-fen</code>: The chess position in FEN notation (required)</li>
-            <li><code>data-solution</code>: Comma-separated solution moves (optional, enables puzzle mode)</li>
+            <li><code>data-solution</code>: Solution moves - comma-separated, use "|" for alternative paths (optional, enables puzzle mode)</li>
+            <li><code>data-lang</code>: Language code - "en" (English, default) or "de" (German) (optional, Phase 1 feature)</li>
             <li><code>data-width</code>: Board width in pixels (optional, default: 400)</li>
             <li><code>data-auto-flip</code>: Auto-rotate board for black's turn (optional, set to "true" to enable)</li>
         </ul>

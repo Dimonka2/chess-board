@@ -16,7 +16,26 @@ async function buildJS() {
     // Read dependency files
     let chessJS = fs.readFileSync('node_modules/chess.js/dist/cjs/chess.js', 'utf8');
     let chessgroundJS = fs.readFileSync('node_modules/chessground/dist/chessground.min.js', 'utf8');
-    const widgetJS = fs.readFileSync('src/chess-widget.js', 'utf8');
+
+    // Read widget source files in order (dependencies first)
+    const widgetFiles = [
+      'src/widget-utils.js',
+      'src/widget-i18n.js',
+      'src/widget-solution-validator.js',
+      'src/widget-core.js',
+      'src/widget-board.js',
+      'src/widget-solution.js',
+      'src/chess-widget.js'  // Main entry point last
+    ];
+
+    let widgetJS = '';
+    for (const file of widgetFiles) {
+      if (fs.existsSync(file)) {
+        widgetJS += fs.readFileSync(file, 'utf8') + '\n\n';
+      } else {
+        console.warn(`Warning: ${file} not found, skipping...`);
+      }
+    }
     
     // Wrap chess.js to make it browser-compatible
     chessJS = `
