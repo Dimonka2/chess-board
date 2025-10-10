@@ -8,29 +8,30 @@ import '../src/chess-widget.css';
 import { Chess } from 'chess.js';
 import { Chessground } from 'chessground';
 
-// Debug: Check if imports worked
-console.log('Chess imported:', typeof Chess);
-console.log('Chessground imported:', typeof Chessground);
-
-// Make dependencies available globally
+// Make dependencies available globally BEFORE importing widget modules
 window.Chess = Chess;
 window.Chessground = Chessground;
 
-// Debug: Check if global assignment worked
-console.log('Global Chess:', typeof window.Chess);
-console.log('Global Chessground:', typeof window.Chessground);
+// Helper to create Chessground instance
+window.initChessground = (element, config) => Chessground(element, config);
 
-// Now we need to wait for the DOM and manually initialize the widget
-// since the widget script runs immediately on import
+// Import all widget modules in dependency order and wait for them to load
+async function loadWidgetModules() {
+  await import('../src/widget-utils.js');
+  await import('../src/widget-i18n.js');
+  await import('../src/widget-solution-validator.js');
+  await import('../src/widget-cache.js');
+  await import('../src/widget-stockfish.js');
+  await import('../src/widget-core.js');
+  await import('../src/widget-board.js');
+  await import('../src/widget-solution.js');
+  await import('../src/chess-widget.js');
 
-// Import the widget source but handle initialization manually
-import('../src/chess-widget.js').then(() => {
-  console.log('Chess widget module loaded');
-  
-  // The widget should have auto-initialized, but let's check
-  if (typeof window.ChessWidget !== 'undefined') {
-    console.log('ChessWidget available globally');
-  } else {
-    console.error('ChessWidget not found in global scope');
-  }
+  console.log('Chess widget loaded successfully!');
+  console.log('ChessWidget available:', typeof window.ChessWidget);
+}
+
+// Load modules and initialize
+loadWidgetModules().catch(error => {
+  console.error('Failed to load chess widget:', error);
 });

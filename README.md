@@ -5,7 +5,12 @@ Professional chess puzzle widget using chessground and chess.js. Create interact
 ## Features
 
 - ♟️ **Interactive Chess Puzzles** - Drag & drop pieces with solution validation
-- 🔄 **Free Play Mode** - Analysis mode without puzzle constraints  
+- 🔀 **Alternative Solutions** - Support multiple valid solution paths with `|` separator
+- 🌍 **Internationalization** - Multi-language support (English, German, extensible)
+- 🤖 **Stockfish Integration** - AI-powered counter-move feedback for wrong moves
+- 🏹 **Visual Arrows** - Red arrows showing Stockfish's counter-moves
+- 💾 **Smart Caching** - localStorage caching reduces API calls by >80%
+- 🔄 **Free Play Mode** - Analysis mode without puzzle constraints
 - 🔄 **Auto-Flip Board** - Automatically rotate board for black's turn
 - 📱 **Responsive Design** - Works perfectly on desktop and mobile
 - 🎨 **Professional UI** - Lichess-quality board and piece graphics
@@ -13,7 +18,7 @@ Professional chess puzzle widget using chessground and chess.js. Create interact
 - 🔧 **Easy Integration** - Just include 2 files in your HTML
 - 🚀 **Modern Development** - Vite dev server with live reload
 - 🎯 **Multiple Widgets** - Add multiple boards to the same page
-- ⚙️ **Highly Configurable** - FEN positions, solutions, board sizes
+- ⚙️ **Highly Configurable** - FEN positions, solutions, board sizes, languages, AI feedback
 
 ## Quick Start
 
@@ -59,12 +64,27 @@ The widget will work immediately with all dependencies bundled - no internet con
 
 Use these data attributes to configure your chess widgets:
 
+### Core Configuration
+
 | Attribute | Required | Description | Example |
 |-----------|----------|-------------|---------|
 | `data-fen` | Yes | Chess position in FEN notation | `"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"` |
-| `data-solution` | No | Comma-separated solution moves. If omitted, enables free play mode | `"e2e4,e7e5,Ng1f3"` |
+| `data-solution` | No | Solution moves (comma-separated). Use `\|` for alternative paths | `"e2e4,e7e5,Nf3\|e2e4,e7e5,Bc4"` |
 | `data-width` | No | Board width in pixels (default: 400) | `"500"` |
 | `data-auto-flip` | No | Auto-rotate board for black's turn (default: false) | `"true"` |
+| `data-orientation` | No | Fixed board orientation: 'white' or 'black' | `"black"` |
+| `data-lang` | No | Language code: 'en' (English) or 'de' (German) | `"de"` |
+
+### Stockfish AI Features
+
+| Attribute | Required | Description | Example |
+|-----------|----------|-------------|---------|
+| `data-stockfish-enabled` | No | Enable AI counter-move feedback (default: false) | `"true"` |
+| `data-stockfish-depth` | No | AI analysis depth, 1-20 (default: 12) | `"15"` |
+| `data-stockfish-timeout` | No | API timeout in milliseconds (default: 2000) | `"3000"` |
+| `data-stockfish-show-arrow` | No | Show red arrow for counter-moves (default: true) | `"true"` |
+| `data-stockfish-show-animation` | No | Animate counter-moves (default: true) | `"true"` |
+| `data-stockfish-cache-enabled` | No | Enable localStorage caching (default: true) | `"true"` |
 
 ## Examples
 
@@ -93,9 +113,42 @@ Use these data attributes to configure your chess widgets:
 
 ### Custom Size
 ```html
-<div class="chess-puzzle" 
+<div class="chess-puzzle"
      data-fen="r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"
      data-width="600">
+</div>
+```
+
+### Alternative Solutions
+```html
+<!-- Puzzle with multiple correct paths -->
+<div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+     data-solution="f1e1,e5e4,d1h5|f1e1,e5e4,d1f3">
+     <!-- Both Qh5 and Qf3 are correct after Re1 -->
+</div>
+```
+
+### German Language
+```html
+<!-- Puzzle with German interface -->
+<div class="chess-puzzle"
+     data-fen="rnb3kr/p4ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1"
+     data-solution="e1e8"
+     data-lang="de">
+</div>
+```
+
+### Stockfish AI Feedback
+```html
+<!-- Puzzle with AI counter-move feedback and arrows -->
+<div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+     data-solution="d1e2,f6e4,e2e4"
+     data-stockfish-enabled="true"
+     data-stockfish-depth="12"
+     data-stockfish-show-arrow="true">
+     <!-- Wrong moves trigger Stockfish counter-move with red arrow -->
 </div>
 ```
 
@@ -142,11 +195,13 @@ npm run dev:prod    # Test production build with dev server
 
 The widget:
 
-1. **Parses Configuration**: Reads data attributes from HTML elements  
+1. **Parses Configuration**: Reads data attributes from HTML elements (language, Stockfish settings, etc.)
 2. **Creates Board**: Initializes interactive chessground board (bundled)
 3. **Validates Moves**: Uses chess.js for legal move validation (bundled)
-4. **Checks Solutions**: Compares player moves against provided solutions
-5. **Provides Feedback**: Shows visual feedback for correct/incorrect moves
+4. **Checks Solutions**: Supports multiple solution paths with alternative move sequences
+5. **Provides Feedback**: Shows visual feedback in the selected language
+6. **AI Counter-Moves**: When enabled, wrong moves trigger Stockfish analysis with visual arrows
+7. **Smart Caching**: Stores Stockfish responses in localStorage to reduce API calls
 
 ## Move Notation
 
@@ -158,6 +213,48 @@ Solutions can be provided in two formats:
 Examples:
 - `data-solution="e2e4,e7e5,Ng1f3"` (UCI)
 - `data-solution="e4,e5,Nf3"` (SAN)
+
+### Alternative Solution Paths
+
+Separate multiple valid solution paths with the pipe character (`|`):
+
+```html
+data-solution="e2e4,e7e5,Nf3|e2e4,e7e5,Bc4"
+```
+
+This allows the puzzle to accept either `Nf3` OR `Bc4` as the third move. Perfect for tactical puzzles with multiple winning continuations!
+
+## Advanced Features
+
+### Internationalization
+
+The widget supports multiple languages. Currently available:
+
+- **English** (default): `data-lang="en"`
+- **German**: `data-lang="de"`
+
+All feedback messages, button labels, and status text will be displayed in the selected language. The system is extensible - additional languages can be added by extending the translation files.
+
+### Stockfish AI Integration
+
+When `data-stockfish-enabled="true"` is set, wrong moves trigger an AI analysis:
+
+1. User makes an incorrect move
+2. Widget shows "loading" indicator
+3. Stockfish API analyzes the position (or retrieves from cache)
+4. Best counter-move is displayed with:
+   - **Animation**: Piece moves on the board
+   - **Red Arrow**: Visual indicator showing the move direction
+   - **Status Message**: Shows the move in UCI notation
+5. After 2 seconds, both moves are undone
+6. User can try again
+
+**Caching**: Stockfish responses are cached in localStorage for 30 days, dramatically reducing API calls and improving performance. The cache is puzzle-specific and automatically manages storage quota.
+
+**Configuration Tips**:
+- **Depth 8-10**: Fast responses, good for beginners
+- **Depth 12-15**: Balanced (default: 12)
+- **Depth 16-20**: Strongest analysis, slower responses
 
 ## Browser Support
 

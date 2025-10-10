@@ -22,6 +22,8 @@ async function buildJS() {
       'src/widget-utils.js',
       'src/widget-i18n.js',
       'src/widget-solution-validator.js',
+      'src/widget-cache.js',           // Phase 2: Caching system
+      'src/widget-stockfish.js',       // Phase 2: Stockfish API client
       'src/widget-core.js',
       'src/widget-board.js',
       'src/widget-solution.js',

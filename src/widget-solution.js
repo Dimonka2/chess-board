@@ -9,7 +9,15 @@
  * @param {string} dest - Destination square
  */
 ChessWidget.prototype.onMove = function(orig, dest) {
-  const move = this.chess.move({ from: orig, to: dest });
+  let move = null;
+
+  // Try to make the move - chess.js may throw an error for invalid moves
+  try {
+    move = this.chess.move({ from: orig, to: dest });
+  } catch (error) {
+    // Invalid move - chess.js threw an error
+    console.warn('Invalid move attempted:', { from: orig, to: dest }, error.message);
+  }
 
   if (!move) {
     // Invalid move - reject and reset board
@@ -77,7 +85,19 @@ ChessWidget.prototype.handleCorrectMove = function() {
 /**
  * Handle a wrong move
  */
-ChessWidget.prototype.handleWrongMove = function() {
+ChessWidget.prototype.handleWrongMove = async function() {
+  // Check if Stockfish feedback is enabled
+  if (this.stockfish && this.stockfishEnabled) {
+    await this.handleWrongMoveWithStockfish();
+  } else {
+    this.handleWrongMoveBasic();
+  }
+};
+
+/**
+ * Handle wrong move with basic feedback (no Stockfish)
+ */
+ChessWidget.prototype.handleWrongMoveBasic = function() {
   this.showFeedback('wrong');
   this.chess.undo();
   const currentTurn = this.chess.turn();
@@ -91,6 +111,128 @@ ChessWidget.prototype.handleWrongMove = function() {
       dests: this.getDests()
     }
   });
+};
+
+/**
+ * Handle wrong move with Stockfish counter-move feedback
+ */
+ChessWidget.prototype.handleWrongMoveWithStockfish = async function() {
+  this.showFeedback('loading');
+
+  // Get current position after user's wrong move (before undo)
+  const currentFen = this.chess.fen();
+
+  try {
+    // Check cache first
+    let counterMoveData = null;
+    if (this.cache) {
+      counterMoveData = this.cache.getCachedMove(currentFen, this.stockfishDepth);
+    }
+
+    // If not in cache, request from API
+    if (!counterMoveData) {
+      counterMoveData = await this.stockfish.getBestMove(currentFen);
+
+      // Store in cache
+      if (this.cache && counterMoveData) {
+        this.cache.setCachedMove(currentFen, this.stockfishDepth, counterMoveData);
+      }
+    }
+
+    // Show the counter-move
+    if (counterMoveData && counterMoveData.move) {
+      await this.showStockfishCounterMove(counterMoveData);
+    } else {
+      // Fallback to basic feedback if no counter-move
+      this.handleWrongMoveBasic();
+    }
+
+  } catch (error) {
+    console.warn('Stockfish request failed, falling back to basic feedback:', error);
+    this.handleWrongMoveBasic();
+  }
+};
+
+/**
+ * Show Stockfish's counter-move as feedback
+ * @param {object} counterMoveData - Counter-move data from Stockfish
+ */
+ChessWidget.prototype.showStockfishCounterMove = async function(counterMoveData) {
+  const move = counterMoveData.move;
+
+  // Parse the UCI move (e.g., "e2e4" or "e7e8q")
+  const from = move.substring(0, 2);
+  const to = move.substring(2, 4);
+  const promotion = move.length > 4 ? move[4] : undefined;
+
+  // Make the counter-move on the chess.js board
+  const chessMove = this.chess.move({ from, to, promotion });
+
+  if (chessMove) {
+    // Animate the counter-move on the board
+    this.chessground.move(from, to);
+
+    // Update board state to reflect the counter-move
+    const currentTurn = this.chess.turn();
+    const configUpdate = {
+      fen: this.chess.fen(),
+      orientation: this.getOrientation(),
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
+      movable: {
+        color: undefined  // Disable moves during feedback
+      }
+    };
+
+    // Add arrow if enabled (Phase 3 feature)
+    if (this.stockfishShowArrow) {
+      configUpdate.drawable = {
+        enabled: false,  // Disable manual drawing
+        visible: true,
+        autoShapes: [
+          {
+            orig: from,
+            dest: to,
+            brush: 'red'  // Red arrow for counter-move
+          }
+        ]
+      };
+    }
+
+    this.chessground.set(configUpdate);
+
+    // Show feedback message with the counter-move
+    this.showFeedback('stockfish_counter', { move: move });
+
+    // Wait 2 seconds, then undo both moves
+    await delay(2000);
+
+    // Undo Stockfish's move and user's wrong move
+    this.chess.undo();  // Undo Stockfish's counter-move
+    this.chess.undo();  // Undo user's wrong move
+
+    // Reset board to position before wrong move
+    const resetTurn = this.chess.turn();
+    this.chessground.set({
+      fen: this.chess.fen(),
+      orientation: this.getOrientation(),
+      turnColor: resetTurn === 'w' ? 'white' : 'black',
+      lastMove: undefined,
+      movable: {
+        color: resetTurn === 'w' ? 'white' : 'black',
+        dests: this.getDests()
+      },
+      drawable: {
+        autoShapes: []  // Clear arrows
+      }
+    });
+
+    // Show "try again" message
+    this.showFeedback('wrong');
+
+  } else {
+    // Failed to make counter-move, fall back to basic feedback
+    this.handleWrongMoveBasic();
+  }
 };
 
 /**

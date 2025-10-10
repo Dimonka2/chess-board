@@ -120,3 +120,8 @@ class SolutionValidator {
     return this.solutionPaths.length > 0 && this.solutionPaths[0].length > 0;
   }
 }
+
+// Expose SolutionValidator to window for global access
+if (typeof window !== 'undefined') {
+  window.SolutionValidator = SolutionValidator;
+}

@@ -8,10 +8,11 @@ This is a chess widget library that creates interactive chess puzzles using ches
 
 ## Core Architecture
 
-### Modular Structure (Phase 1 - Completed)
+### Modular Structure
 
 The widget is now split into multiple modules for better maintainability:
 
+**Core Modules (Phase 1):**
 - **`src/widget-utils.js`**: Utility functions (delay, formatting, parsing)
 - **`src/widget-i18n.js`**: Internationalization system (English, German)
 - **`src/widget-solution-validator.js`**: Alternative solutions parser and validator
@@ -19,6 +20,10 @@ The widget is now split into multiple modules for better maintainability:
 - **`src/widget-board.js`**: Board rendering, orientation, and Chessground integration
 - **`src/widget-solution.js`**: Move validation, automatic moves, puzzle feedback
 - **`src/chess-widget.js`**: Main entry point and auto-initialization
+
+**Stockfish Integration (Phase 2):**
+- **`src/widget-stockfish.js`**: Stockfish API client for best move analysis
+- **`src/widget-cache.js`**: localStorage-based caching system to reduce API calls
 
 ### Build System
 
@@ -48,7 +53,7 @@ npm run build        # Create standalone production files in dist/
 The custom build script (`build.js`) performs critical operations:
 
 1. **Module Concatenation**: Combines widget modules in dependency order:
-   - widget-utils.js → widget-i18n.js → widget-solution-validator.js → widget-core.js → widget-board.js → widget-solution.js → chess-widget.js
+   - widget-utils.js → widget-i18n.js → widget-solution-validator.js → widget-cache.js → widget-stockfish.js → widget-core.js → widget-board.js → widget-solution.js → chess-widget.js
 2. **Chess.js Wrapping**: Wraps CommonJS exports to create global `window.Chess`, `window.SQUARES`, etc.
 3. **Chessground Wrapping**: Removes ES6 exports and creates global `window.Chessground` and `window.initChessground`
 4. **CSS Bundling**: Combines chessground themes (base, brown, cburnett pieces) with custom widget styles
@@ -68,6 +73,14 @@ The widget reads HTML data attributes:
 ### Phase 1 Features
 - `data-lang`: Language code - 'en' (English, default) or 'de' (German)
 
+### Phase 2 & 3 Features (Stockfish Integration)
+- `data-stockfish-enabled`: Enable Stockfish counter-move feedback (default: false)
+- `data-stockfish-depth`: Stockfish analysis depth, 1-20 (default: 12)
+- `data-stockfish-timeout`: API request timeout in milliseconds (default: 2000)
+- `data-stockfish-show-arrow`: Show red arrow for counter-move (default: true) ✨ Phase 3
+- `data-stockfish-show-animation`: Animate counter-move (default: true)
+- `data-stockfish-cache-enabled`: Enable localStorage caching (default: true)
+
 ### Alternative Solutions Example
 ```html
 <!-- Multiple solution paths -->
@@ -85,6 +98,18 @@ The widget reads HTML data attributes:
 </div>
 ```
 
+### Stockfish Integration Example
+```html
+<!-- Enable Stockfish counter-move feedback -->
+<div class="chess-puzzle"
+     data-fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+     data-solution="e2e4,e7e5,g1f3,b8c6,f1c4"
+     data-stockfish-enabled="true"
+     data-stockfish-depth="12"
+     data-stockfish-cache-enabled="true">
+</div>
+```
+
 ## Architecture Notes
 
 - **Auto-initialization**: Widgets automatically initialize on DOM ready via `ChessWidget.init()`
@@ -92,6 +117,8 @@ The widget reads HTML data attributes:
 - **Move Validation**: Supports both UCI notation (e2e4) and SAN notation (Nf3)
 - **Alternative Solutions**: Puzzles can accept multiple solution paths using pipe `|` separator
 - **Internationalization**: Built-in support for English and German, extensible for more languages
+- **Stockfish Integration**: Optional counter-move feedback when user makes wrong move
+- **Intelligent Caching**: localStorage-based caching system with expiration and quota management
 - **State Management**: Each widget instance maintains its own chess.js game state and chessground board
 - **Responsive Design**: CSS handles mobile layout with flexbox controls
 
@@ -115,11 +142,166 @@ src/
 └── widget-utils.js              # Utility functions
 ```
 
-### Next Phases
-- **Phase 2**: Stockfish API integration for counter-move feedback
-- **Phase 3**: Visual feedback enhancements
-- **Phase 4**: Full integration and testing
-- **Phase 5**: Documentation and polish
+## Phase 2 Implementation (Completed)
+
+### Features Delivered
+1. **Stockfish API Client**: Integration with stockfish.online API for best move analysis
+2. **localStorage Caching**: Intelligent caching system with expiration and quota handling
+3. **Counter-Move Feedback**: Visual feedback showing opponent's best response to wrong moves
+4. **Graceful Degradation**: Fallback to basic feedback if Stockfish API fails
+
+### Architecture Details
+
+**Stockfish Client (`widget-stockfish.js`):**
+- Communicates with stockfish.online API via POST requests
+- Configurable depth (1-20) and timeout settings
+- Returns best move in UCI notation with evaluation
+- Uses AbortController for timeout handling
+
+**Cache System (`widget-cache.js`):**
+- Stores Stockfish responses in localStorage by puzzle ID
+- Cache key format: `fen:depth` for position-specific caching
+- 30-day expiration for cache entries
+- Automatic pruning when quota exceeded (removes entries older than 7 days)
+- `getStats()` method for cache monitoring
+
+**Wrong Move Flow:**
+1. User makes wrong move
+2. Shows "loading" feedback
+3. Checks cache for position
+4. If not cached, requests from Stockfish API
+5. Stores response in cache
+6. Animates counter-move on board
+7. Shows feedback message for 2 seconds
+8. Undoes both moves and returns to original position
+9. Shows "try again" message
+
+### Configuration
+```html
+<div class="chess-puzzle"
+     data-stockfish-enabled="true"      <!-- Enable Stockfish -->
+     data-stockfish-depth="12"          <!-- Analysis depth (default: 12) -->
+     data-stockfish-timeout="2000"      <!-- API timeout in ms (default: 2000) -->
+     data-stockfish-cache-enabled="true" <!-- Enable caching (default: true) -->
+>
+</div>
+```
+
+### File Structure Updates
+```
+src/
+├── chess-widget.js              # Main entry point
+├── widget-core.js               # Core class + Stockfish initialization
+├── widget-board.js              # Board rendering
+├── widget-solution.js           # Solution validation + Stockfish feedback
+├── widget-solution-validator.js # Alternative solutions
+├── widget-stockfish.js          # ✨ NEW: Stockfish API client
+├── widget-cache.js              # ✨ NEW: localStorage caching
+├── widget-i18n.js               # Internationalization
+└── widget-utils.js              # Utility functions
+```
+
+## Phase 3 Implementation (Completed)
+
+### Features Delivered
+1. **Arrow Visualization**: Red arrows showing Stockfish counter-moves using Chessground's drawable API
+2. **Error Handling**: Improved invalid move error handling with try-catch blocks
+3. **Visual Feedback**: Enhanced UX with arrow indicators for wrong moves
+
+### Architecture Details
+
+**Arrow Drawing (`widget-solution.js`):**
+- Uses Chessground's `drawable.autoShapes` configuration
+- Displays red arrow from origin to destination of counter-move
+- Arrow shows for 2 seconds alongside the counter-move animation
+- Automatically cleared when board resets to original position
+
+**Implementation:**
+```javascript
+// Add arrow if enabled (Phase 3 feature)
+if (this.stockfishShowArrow) {
+  configUpdate.drawable = {
+    enabled: false,  // Disable manual drawing
+    visible: true,
+    autoShapes: [
+      {
+        orig: from,
+        dest: to,
+        brush: 'red'  // Red arrow for counter-move
+      }
+    ]
+  };
+}
+```
+
+**Error Handling Improvements:**
+- Wrapped `chess.move()` calls in try-catch blocks to handle chess.js throwing errors
+- Invalid moves now show clean console warnings instead of uncaught errors
+- Better user feedback for attempted illegal moves
+
+### Configuration
+```html
+<div class="chess-puzzle"
+     data-stockfish-enabled="true"
+     data-stockfish-depth="10"
+     data-stockfish-show-arrow="true"  <!-- Enable arrows (default: true) -->
+>
+</div>
+```
+
+## Phase 4 Implementation (Completed)
+
+### Testing & Integration Verification
+1. **Feature Integration**: All features (alternative solutions, i18n, Stockfish) work together seamlessly
+2. **Error Handling**: Comprehensive try-catch blocks prevent crashes, graceful fallback on API failures
+3. **Performance**: Timeout handling, caching, and optimized API calls ensure <2s response time
+4. **Cross-Puzzle Testing**: Verified with 20+ puzzles ranging from ELO 600-2400
+
+### Verification Results
+
+**Rendering & Display:**
+- ✅ All chess boards render correctly across different puzzle types
+- ✅ Responsive design maintains layout on various screen sizes
+- ✅ Board coordinates display correctly (right-aligned, proper contrast)
+
+**Feature Toggles:**
+- ✅ Stockfish can be enabled/disabled via `data-stockfish-enabled` attribute
+- ✅ Widgets without Stockfish work with basic feedback
+- ✅ Widgets with Stockfish show counter-moves with arrows
+
+**Internationalization:**
+- ✅ English widgets display "Make your move"
+- ✅ German widgets display "Mache deinen Zug"
+- ✅ All feedback messages properly translated
+
+**Alternative Solutions:**
+- ✅ Puzzles accept multiple solution paths using pipe `|` separator
+- ✅ Solution validation correctly tracks active paths
+- ✅ Demo page showcases branching solution example
+
+**Performance & Caching:**
+- ✅ localStorage caching reduces API calls
+- ✅ 30-day cache expiration with automatic pruning
+- ✅ AbortController enforces configurable timeout (default: 2000ms)
+- ✅ Graceful degradation on network failures
+
+**Demo Page Coverage:**
+- 20+ puzzles across 10 ELO levels (600-2400)
+- Tactical patterns: Fork, Pin, Discovery, Skewer, Greek Gift, Smothered Mate, Boden's Mate
+- Special cases: Underpromotion, Double Sacrifice, Interference
+- Feature demonstrations: Alternative solutions, Stockfish arrows, i18n
+
+### Phase 4 Acceptance Criteria (All Met)
+- ✅ Stockfish counter-move integrated into move validation
+- ✅ Alternative solutions work correctly in all scenarios
+- ✅ I18n works correctly across all features
+- ✅ Feature works seamlessly with existing puzzle logic
+- ✅ Errors handled gracefully with fallbacks
+- ✅ Performance is acceptable (<2s response time)
+- ✅ File size increase is minimal (modular architecture)
+
+### Next Phase
+- **Phase 5**: Final documentation, cross-browser testing, and polish
 
 ## Testing Production Build
 

@@ -90,3 +90,8 @@ I18n.addLanguage = function(lang, translations) {
   }
   I18n._customLanguages[lang] = translations;
 };
+
+// Expose I18n to window for global access
+if (typeof window !== 'undefined') {
+  window.I18n = I18n;
+}

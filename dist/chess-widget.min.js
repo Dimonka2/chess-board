@@ -3490,6 +3490,16 @@ function parseInteger(value, defaultValue = 0) {
   return isNaN(parsed) ? defaultValue : parsed;
 }
 
+// Expose utility functions to window for global access
+if (typeof window !== 'undefined') {
+  window.delay = delay;
+  window.formatMove = formatMove;
+  window.deepClone = deepClone;
+  window.isEmpty = isEmpty;
+  window.parseBoolean = parseBoolean;
+  window.parseInteger = parseInteger;
+}
+
 
 /**
  * Internationalization (i18n) System
@@ -3583,6 +3593,11 @@ I18n.addLanguage = function(lang, translations) {
   }
   I18n._customLanguages[lang] = translations;
 };
+
+// Expose I18n to window for global access
+if (typeof window !== 'undefined') {
+  window.I18n = I18n;
+}
 
 
 /**
@@ -3708,6 +3723,300 @@ class SolutionValidator {
   }
 }
 
+// Expose SolutionValidator to window for global access
+if (typeof window !== 'undefined') {
+  window.SolutionValidator = SolutionValidator;
+}
+
+
+/**
+ * Move Cache System
+ * Caches Stockfish responses in localStorage to reduce API calls
+ */
+
+class MoveCache {
+  constructor(puzzleFen) {
+    this.puzzleId = this.generatePuzzleId(puzzleFen);
+    this.cache = this.loadFromStorage() || {};
+    this.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+  }
+
+  /**
+   * Generate a unique ID for this puzzle based on its FEN
+   * @param {string} fen - Starting FEN position
+   * @returns {string} Puzzle ID
+   */
+  generatePuzzleId(fen) {
+    // Simple hash of starting FEN for cache key
+    // Use base64 encoding and take first 16 characters
+    try {
+      return btoa(fen).substring(0, 16);
+    } catch (e) {
+      // Fallback if btoa fails
+      return fen.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '_');
+    }
+  }
+
+  /**
+   * Get cached move for a position
+   * @param {string} fen - Position FEN
+   * @param {number} depth - Stockfish depth
+   * @returns {object|null} Cached move data or null
+   */
+  getCachedMove(fen, depth) {
+    const key = `${fen}:${depth}`;
+    const cached = this.cache[key];
+
+    if (!cached) {
+      return null;
+    }
+
+    // Check if cache entry is still valid (not expired)
+    const age = Date.now() - cached.timestamp;
+    if (age > this.maxAge) {
+      // Cache expired, remove it
+      delete this.cache[key];
+      this.saveToStorage();
+      return null;
+    }
+
+    return {
+      move: cached.move,
+      evaluation: cached.evaluation,
+      mate: cached.mate
+    };
+  }
+
+  /**
+   * Store a move in the cache
+   * @param {string} fen - Position FEN
+   * @param {number} depth - Stockfish depth
+   * @param {object} moveData - Move data to cache
+   */
+  setCachedMove(fen, depth, moveData) {
+    const key = `${fen}:${depth}`;
+    this.cache[key] = {
+      move: moveData.move,
+      evaluation: moveData.evaluation,
+      mate: moveData.mate || null,
+      timestamp: Date.now()
+    };
+    this.saveToStorage();
+  }
+
+  /**
+   * Load cache from localStorage
+   * @returns {object|null} Cached data or null
+   */
+  loadFromStorage() {
+    try {
+      const data = localStorage.getItem(`sf-cache-${this.puzzleId}`);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      console.warn('Failed to load Stockfish cache:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Save cache to localStorage
+   */
+  saveToStorage() {
+    try {
+      localStorage.setItem(`sf-cache-${this.puzzleId}`, JSON.stringify(this.cache));
+    } catch (e) {
+      // Handle quota exceeded or other localStorage errors
+      console.warn('Failed to save Stockfish cache:', e);
+
+      // Try to clear old entries and retry
+      if (e.name === 'QuotaExceededError') {
+        this.pruneOldEntries();
+        try {
+          localStorage.setItem(`sf-cache-${this.puzzleId}`, JSON.stringify(this.cache));
+        } catch (retryError) {
+          console.error('Failed to save cache even after pruning:', retryError);
+        }
+      }
+    }
+  }
+
+  /**
+   * Remove old cache entries to free up space
+   */
+  pruneOldEntries() {
+    const now = Date.now();
+    let removed = 0;
+
+    Object.keys(this.cache).forEach(key => {
+      const entry = this.cache[key];
+      const age = now - entry.timestamp;
+
+      // Remove entries older than 7 days during pruning
+      if (age > 7 * 24 * 60 * 60 * 1000) {
+        delete this.cache[key];
+        removed++;
+      }
+    });
+
+    console.log(`Pruned ${removed} old cache entries`);
+  }
+
+  /**
+   * Clear all cached moves for this puzzle
+   */
+  clear() {
+    this.cache = {};
+    try {
+      localStorage.removeItem(`sf-cache-${this.puzzleId}`);
+    } catch (e) {
+      console.warn('Failed to clear cache:', e);
+    }
+  }
+
+  /**
+   * Get cache statistics
+   * @returns {object} Cache stats
+   */
+  getStats() {
+    const entries = Object.keys(this.cache).length;
+    const oldestEntry = Object.values(this.cache).reduce((oldest, entry) => {
+      return entry.timestamp < oldest ? entry.timestamp : oldest;
+    }, Date.now());
+
+    return {
+      entries,
+      puzzleId: this.puzzleId,
+      oldestEntryAge: entries > 0 ? Date.now() - oldestEntry : 0
+    };
+  }
+}
+
+// Expose MoveCache to window for global access
+if (typeof window !== 'undefined') {
+  window.MoveCache = MoveCache;
+}
+
+
+/**
+ * Stockfish API Client
+ * Handles communication with stockfish.online API for best move analysis
+ */
+
+class StockfishClient {
+  constructor(config = {}) {
+    this.depth = config.depth || 12;
+    this.timeout = config.timeout || 2000;
+    this.apiUrl = 'https://stockfish.online/api/s/v2.php';
+  }
+
+  /**
+   * Get the best move for a given position
+   * @param {string} fen - FEN position string
+   * @returns {Promise<{move: string, evaluation: number}>}
+   */
+  async getBestMove(fen) {
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+      // Build URL with GET parameters - stockfish.online API uses GET
+      // URLSearchParams encodes spaces as + which breaks FEN notation
+      // So we manually build the query string and encode properly
+      const params = new URLSearchParams();
+      params.append('fen', fen);
+      params.append('depth', this.depth.toString());
+
+      // Convert + back to %20 for proper space encoding in FEN
+      const queryString = params.toString().replace(/\+/g, '%20');
+      const url = `${this.apiUrl}?${queryString}`;
+
+      console.log('Stockfish API request:', url);
+
+      // Make API request using GET
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Log the full response for debugging
+      console.log('Stockfish API response:', data);
+
+      // Validate response - handle both success and error cases
+      if (!data.success) {
+        console.error('Stockfish API error:', data.error || 'Unknown error');
+        throw new Error(data.error || 'Invalid response from Stockfish API');
+      }
+
+      if (!data.bestmove) {
+        throw new Error('No best move returned from Stockfish API');
+      }
+
+      // Parse the bestmove - format is "bestmove e2e4 ponder e7e5"
+      // We need to extract just the move part (e.g., "e2e4")
+      let moveUci = data.bestmove;
+      if (moveUci.startsWith('bestmove ')) {
+        // Extract the move after "bestmove " and before " ponder"
+        moveUci = moveUci.substring(9).split(' ')[0];
+      }
+
+      // Return move and evaluation
+      return {
+        move: moveUci,
+        evaluation: data.evaluation || 0,
+        mate: data.mate || null,
+        continuation: data.continuation || ''
+      };
+
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Stockfish API request timed out');
+      }
+
+      console.error('Stockfish API error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if Stockfish is available (test API connectivity)
+   * @returns {Promise<boolean>}
+   */
+  async isAvailable() {
+    try {
+      // Test with starting position
+      const testFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+      await this.getBestMove(testFen);
+      return true;
+    } catch (error) {
+      console.warn('Stockfish API not available:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Update configuration
+   * @param {object} config - New configuration
+   */
+  updateConfig(config) {
+    if (config.depth !== undefined) this.depth = config.depth;
+    if (config.timeout !== undefined) this.timeout = config.timeout;
+  }
+}
+
+// Expose StockfishClient to window for global access
+if (typeof window !== 'undefined') {
+  window.StockfishClient = StockfishClient;
+}
+
 
 /**
  * ChessWidget Core - Main class definition and initialization
@@ -3737,6 +4046,22 @@ class ChessWidget {
     // Initialize solution validator (supports alternative solutions)
     const solutionString = element.dataset.solution || '';
     this.solutionValidator = solutionString ? new SolutionValidator(solutionString) : null;
+
+    // Initialize Stockfish components (Phase 2)
+    if (this.stockfishEnabled) {
+      this.stockfish = new StockfishClient({
+        depth: this.stockfishDepth,
+        timeout: this.stockfishTimeout
+      });
+
+      // Initialize cache if enabled
+      if (this.stockfishCacheEnabled) {
+        this.cache = new MoveCache(this.fen);
+      }
+    } else {
+      this.stockfish = null;
+      this.cache = null;
+    }
 
     // Initialize state
     this.currentMoveIndex = 0;
@@ -3798,6 +4123,11 @@ class ChessWidget {
     const widgets = document.querySelectorAll('.chess-puzzle');
     widgets.forEach(widget => new ChessWidget(widget));
   }
+}
+
+// Expose ChessWidget to window for global access
+if (typeof window !== 'undefined') {
+  window.ChessWidget = ChessWidget;
 }
 
 
@@ -3972,7 +4302,15 @@ ChessWidget.prototype.reset = function() {
  * @param {string} dest - Destination square
  */
 ChessWidget.prototype.onMove = function(orig, dest) {
-  const move = this.chess.move({ from: orig, to: dest });
+  let move = null;
+
+  // Try to make the move - chess.js may throw an error for invalid moves
+  try {
+    move = this.chess.move({ from: orig, to: dest });
+  } catch (error) {
+    // Invalid move - chess.js threw an error
+    console.warn('Invalid move attempted:', { from: orig, to: dest }, error.message);
+  }
 
   if (!move) {
     // Invalid move - reject and reset board
@@ -4040,7 +4378,19 @@ ChessWidget.prototype.handleCorrectMove = function() {
 /**
  * Handle a wrong move
  */
-ChessWidget.prototype.handleWrongMove = function() {
+ChessWidget.prototype.handleWrongMove = async function() {
+  // Check if Stockfish feedback is enabled
+  if (this.stockfish && this.stockfishEnabled) {
+    await this.handleWrongMoveWithStockfish();
+  } else {
+    this.handleWrongMoveBasic();
+  }
+};
+
+/**
+ * Handle wrong move with basic feedback (no Stockfish)
+ */
+ChessWidget.prototype.handleWrongMoveBasic = function() {
   this.showFeedback('wrong');
   this.chess.undo();
   const currentTurn = this.chess.turn();
@@ -4054,6 +4404,128 @@ ChessWidget.prototype.handleWrongMove = function() {
       dests: this.getDests()
     }
   });
+};
+
+/**
+ * Handle wrong move with Stockfish counter-move feedback
+ */
+ChessWidget.prototype.handleWrongMoveWithStockfish = async function() {
+  this.showFeedback('loading');
+
+  // Get current position after user's wrong move (before undo)
+  const currentFen = this.chess.fen();
+
+  try {
+    // Check cache first
+    let counterMoveData = null;
+    if (this.cache) {
+      counterMoveData = this.cache.getCachedMove(currentFen, this.stockfishDepth);
+    }
+
+    // If not in cache, request from API
+    if (!counterMoveData) {
+      counterMoveData = await this.stockfish.getBestMove(currentFen);
+
+      // Store in cache
+      if (this.cache && counterMoveData) {
+        this.cache.setCachedMove(currentFen, this.stockfishDepth, counterMoveData);
+      }
+    }
+
+    // Show the counter-move
+    if (counterMoveData && counterMoveData.move) {
+      await this.showStockfishCounterMove(counterMoveData);
+    } else {
+      // Fallback to basic feedback if no counter-move
+      this.handleWrongMoveBasic();
+    }
+
+  } catch (error) {
+    console.warn('Stockfish request failed, falling back to basic feedback:', error);
+    this.handleWrongMoveBasic();
+  }
+};
+
+/**
+ * Show Stockfish's counter-move as feedback
+ * @param {object} counterMoveData - Counter-move data from Stockfish
+ */
+ChessWidget.prototype.showStockfishCounterMove = async function(counterMoveData) {
+  const move = counterMoveData.move;
+
+  // Parse the UCI move (e.g., "e2e4" or "e7e8q")
+  const from = move.substring(0, 2);
+  const to = move.substring(2, 4);
+  const promotion = move.length > 4 ? move[4] : undefined;
+
+  // Make the counter-move on the chess.js board
+  const chessMove = this.chess.move({ from, to, promotion });
+
+  if (chessMove) {
+    // Animate the counter-move on the board
+    this.chessground.move(from, to);
+
+    // Update board state to reflect the counter-move
+    const currentTurn = this.chess.turn();
+    const configUpdate = {
+      fen: this.chess.fen(),
+      orientation: this.getOrientation(),
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
+      movable: {
+        color: undefined  // Disable moves during feedback
+      }
+    };
+
+    // Add arrow if enabled (Phase 3 feature)
+    if (this.stockfishShowArrow) {
+      configUpdate.drawable = {
+        enabled: false,  // Disable manual drawing
+        visible: true,
+        autoShapes: [
+          {
+            orig: from,
+            dest: to,
+            brush: 'red'  // Red arrow for counter-move
+          }
+        ]
+      };
+    }
+
+    this.chessground.set(configUpdate);
+
+    // Show feedback message with the counter-move
+    this.showFeedback('stockfish_counter', { move: move });
+
+    // Wait 2 seconds, then undo both moves
+    await delay(2000);
+
+    // Undo Stockfish's move and user's wrong move
+    this.chess.undo();  // Undo Stockfish's counter-move
+    this.chess.undo();  // Undo user's wrong move
+
+    // Reset board to position before wrong move
+    const resetTurn = this.chess.turn();
+    this.chessground.set({
+      fen: this.chess.fen(),
+      orientation: this.getOrientation(),
+      turnColor: resetTurn === 'w' ? 'white' : 'black',
+      lastMove: undefined,
+      movable: {
+        color: resetTurn === 'w' ? 'white' : 'black',
+        dests: this.getDests()
+      },
+      drawable: {
+        autoShapes: []  // Clear arrows
+      }
+    });
+
+    // Show "try again" message
+    this.showFeedback('wrong');
+
+  } else {
+    // Failed to make counter-move, fall back to basic feedback
+    this.handleWrongMoveBasic();
+  }
 };
 
 /**

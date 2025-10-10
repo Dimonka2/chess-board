@@ -125,13 +125,26 @@
 
 /* Fix coordinate positioning - move to right side (Lichess style) */
 /* This ensures the coordinate colors match the square colors correctly */
-.chess-widget-board .cg-wrap coords.ranks {
+.cg-wrap coords.ranks {
   left: auto !important;
   right: 4px !important;
   align-items: flex-end !important;
 }
 
-.chess-widget-board .cg-wrap coords.files {
+.cg-wrap coords.files {
+  text-align: right !important;
+  left: auto !important;
+  right: 1px !important;
+}
+
+/* Additional specificity to ensure override */
+coords.ranks {
+  left: auto !important;
+  right: 4px !important;
+  align-items: flex-end !important;
+}
+
+coords.files {
   text-align: right !important;
   left: auto !important;
   right: 1px !important;

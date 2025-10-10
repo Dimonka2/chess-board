@@ -433,6 +433,30 @@
     </div>
 
     <div class="demo-section">
+        <h2>🆕 Stockfish Counter-Move with Arrows (Phase 3 Feature!)</h2>
+        <div class="puzzle-info">
+            <h3>AI-Powered Feedback with Visual Arrows</h3>
+            <p>When you make a wrong move, Stockfish shows you why it's wrong by playing its best counter-move with a red arrow! Try making a wrong move to see it in action.</p>
+        </div>
+        <div class="puzzle-container">
+            <div class="chess-puzzle"
+                 data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+                 data-solution="d1e2,f6e4,e2e4"
+                 data-stockfish-enabled="true"
+                 data-stockfish-depth="10"
+                 data-stockfish-show-arrow="true"
+                 data-width="400">
+            </div>
+        </div>
+        <pre><code>&lt;div class="chess-puzzle"
+     data-stockfish-enabled="true"
+     data-stockfish-depth="10"
+     data-stockfish-show-arrow="true"&gt;
+&lt;!-- Stockfish will show counter-moves with red arrows --&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+
+    <div class="demo-section">
         <h2>🆕 Internationalization (Phase 1 Feature!)</h2>
         <div class="puzzle-info">
             <h3>Multi-Language Support</h3>
@@ -482,9 +506,14 @@
         <ul>
             <li><code>data-fen</code>: The chess position in FEN notation (required)</li>
             <li><code>data-solution</code>: Solution moves - comma-separated, use "|" for alternative paths (optional, enables puzzle mode)</li>
-            <li><code>data-lang</code>: Language code - "en" (English, default) or "de" (German) (optional, Phase 1 feature)</li>
+            <li><code>data-lang</code>: Language code - "en" (English, default) or "de" (German) (optional, Phase 1)</li>
             <li><code>data-width</code>: Board width in pixels (optional, default: 400)</li>
             <li><code>data-auto-flip</code>: Auto-rotate board for black's turn (optional, set to "true" to enable)</li>
+            <li><strong>Phase 2 Features:</strong></li>
+            <li><code>data-stockfish-enabled</code>: Enable Stockfish counter-move feedback (optional, set to "true")</li>
+            <li><code>data-stockfish-depth</code>: Stockfish analysis depth (optional, default: 12)</li>
+            <li><code>data-stockfish-timeout</code>: Max API wait time in ms (optional, default: 2000)</li>
+            <li><code>data-stockfish-cache-enabled</code>: Enable localStorage caching (optional, default: true)</li>
         </ul>
         
         <p>The widget is completely standalone with all dependencies (chessground and chess.js) bundled - no CDN calls required!</p>

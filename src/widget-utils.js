@@ -67,3 +67,13 @@ function parseInteger(value, defaultValue = 0) {
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? defaultValue : parsed;
 }
+
+// Expose utility functions to window for global access
+if (typeof window !== 'undefined') {
+  window.delay = delay;
+  window.formatMove = formatMove;
+  window.deepClone = deepClone;
+  window.isEmpty = isEmpty;
+  window.parseBoolean = parseBoolean;
+  window.parseInteger = parseInteger;
+}

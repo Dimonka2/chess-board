@@ -27,6 +27,22 @@ class ChessWidget {
     const solutionString = element.dataset.solution || '';
     this.solutionValidator = solutionString ? new SolutionValidator(solutionString) : null;
 
+    // Initialize Stockfish components (Phase 2)
+    if (this.stockfishEnabled) {
+      this.stockfish = new StockfishClient({
+        depth: this.stockfishDepth,
+        timeout: this.stockfishTimeout
+      });
+
+      // Initialize cache if enabled
+      if (this.stockfishCacheEnabled) {
+        this.cache = new MoveCache(this.fen);
+      }
+    } else {
+      this.stockfish = null;
+      this.cache = null;
+    }
+
     // Initialize state
     this.currentMoveIndex = 0;
     this.chess = null;
@@ -87,4 +103,9 @@ class ChessWidget {
     const widgets = document.querySelectorAll('.chess-puzzle');
     widgets.forEach(widget => new ChessWidget(widget));
   }
+}
+
+// Expose ChessWidget to window for global access
+if (typeof window !== 'undefined') {
+  window.ChessWidget = ChessWidget;
 }
