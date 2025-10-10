@@ -362,33 +362,35 @@ section h2 {
   flex: 1;
 }
 
-/* Piece Palette */
+/* Board with Palette Container */
+.board-with-palette {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+/* Piece Palette - Two Column Layout */
 .piece-palette {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 2px solid #e0e0e0;
+}
+
+.palette-column {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.palette-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.palette-label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  min-width: 50px;
 }
 
 .palette-piece {
-  width: 40px;
-  height: 40px;
-  font-size: 1.8rem;
+  width: 45px;
+  height: 45px;
+  font-size: 2rem;
   border: 2px solid #ddd;
   background: white;
   border-radius: 4px;
@@ -397,17 +399,20 @@ section h2 {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
 .palette-piece:hover {
   border-color: #3498db;
-  transform: scale(1.1);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }
 
 .palette-piece.active {
   border-color: #3498db;
   background: #e3f2fd;
-  box-shadow: 0 0 0 2px #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+  transform: scale(1.05);
 }
 
 /* Board Actions */
@@ -448,6 +453,26 @@ section h2 {
   max-width: 500px;
   margin: 0 auto 1rem;
   aspect-ratio: 1;
+}
+
+/* Fix coordinate positioning - move to right side (Lichess style) */
+/* This ensures the coordinate colors match the square colors correctly */
+#editor-board .cg-wrap coords.ranks,
+#editor-board coords.ranks,
+#preview-container .cg-wrap coords.ranks,
+#preview-container coords.ranks {
+  left: auto !important;
+  right: 4px !important;
+  align-items: flex-end !important;
+}
+
+#editor-board .cg-wrap coords.files,
+#editor-board coords.files,
+#preview-container .cg-wrap coords.files,
+#preview-container coords.files {
+  text-align: right !important;
+  left: auto !important;
+  right: 0px !important;
 }
 
 /* FEN Display */
@@ -749,5 +774,31 @@ section h2 {
 
   .header-actions button {
     flex: 1;
+  }
+
+  /* Mobile: Horizontal palette layout */
+  .board-with-palette {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .piece-palette {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .palette-column {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .palette-piece {
+    width: 40px;
+    height: 40px;
+    font-size: 1.8rem;
   }
 }

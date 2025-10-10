@@ -456,3 +456,17 @@ coords.squares:nth-of-type(even) :nth-child(even) {
 .chess-widget-board .cg-board square.check {
   background-color: rgba(255, 0, 0, 0.4) !important;
 }
+
+/* Fix coordinate positioning - move to right side (Lichess style) */
+/* This ensures the coordinate colors match the square colors correctly */
+.chess-widget-board .cg-wrap coords.ranks {
+  left: auto !important;
+  right: 4px !important;
+  align-items: flex-end !important;
+}
+
+.chess-widget-board .cg-wrap coords.files {
+  text-align: right !important;
+  left: auto !important;
+  right: 1px !important;
+}

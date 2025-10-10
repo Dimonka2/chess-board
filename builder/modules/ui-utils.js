@@ -16,18 +16,26 @@ export function showToast(message, type = 'info') {
 }
 
 // Update FEN display and validation status
-export function updateFenDisplay(fen) {
+export function updateFenDisplay(fen, isValid = null) {
   const fenInput = document.getElementById('fen-input');
   const fenStatus = document.getElementById('fen-status');
 
   fenInput.value = fen;
 
-  // Validate FEN
-  try {
-    new Chess(fen);
+  // If validity is provided, use it; otherwise validate
+  if (isValid === null) {
+    try {
+      new Chess(fen);
+      isValid = true;
+    } catch (e) {
+      isValid = false;
+    }
+  }
+
+  if (isValid) {
     fenStatus.textContent = '✓ Valid';
     fenStatus.className = 'fen-status valid';
-  } catch (e) {
+  } else {
     fenStatus.textContent = '✗ Invalid';
     fenStatus.className = 'fen-status invalid';
   }

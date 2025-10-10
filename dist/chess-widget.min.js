@@ -3502,6 +3502,8 @@ class ChessWidget {
       fen: this.fen,
       orientation: orientation,
       turnColor: currentTurn === 'w' ? 'white' : 'black',
+      coordinates: true,
+      ranksPosition: 'right', // Show rank numbers on right side (Lichess style)
       movable: {
         color: currentTurn === 'w' ? 'white' : 'black',
         free: false,

@@ -43,28 +43,6 @@
 
           <!-- Board Setup Tools (only visible in board mode) -->
           <div class="board-setup-only">
-          <!-- Piece Palette -->
-          <div class="piece-palette">
-            <div class="palette-group">
-              <span class="palette-label">White:</span>
-              <button class="palette-piece" data-piece="wK">♔</button>
-              <button class="palette-piece" data-piece="wQ">♕</button>
-              <button class="palette-piece" data-piece="wR">♖</button>
-              <button class="palette-piece" data-piece="wB">♗</button>
-              <button class="palette-piece" data-piece="wN">♘</button>
-              <button class="palette-piece" data-piece="wP">♙</button>
-            </div>
-            <div class="palette-group">
-              <span class="palette-label">Black:</span>
-              <button class="palette-piece" data-piece="bK">♚</button>
-              <button class="palette-piece" data-piece="bQ">♛</button>
-              <button class="palette-piece" data-piece="bR">♜</button>
-              <button class="palette-piece" data-piece="bB">♝</button>
-              <button class="palette-piece" data-piece="bN">♞</button>
-              <button class="palette-piece" data-piece="bP">♟</button>
-            </div>
-          </div>
-
           <!-- Board Actions -->
           <div class="board-actions">
             <button id="btn-start-position">Start Position</button>
@@ -74,8 +52,31 @@
           </div>
           </div><!-- End board-setup-only -->
 
-          <!-- Chessground Board Container (always visible) -->
-          <div id="editor-board" class="editor-board"></div>
+          <!-- Board with Side Palette (always visible) -->
+          <div class="board-with-palette">
+            <!-- Piece Palette -->
+            <div class="piece-palette board-setup-only">
+              <div class="palette-column">
+                <button class="palette-piece" data-piece="wK">♔</button>
+                <button class="palette-piece" data-piece="wQ">♕</button>
+                <button class="palette-piece" data-piece="wR">♖</button>
+                <button class="palette-piece" data-piece="wB">♗</button>
+                <button class="palette-piece" data-piece="wN">♘</button>
+                <button class="palette-piece" data-piece="wP">♙</button>
+              </div>
+              <div class="palette-column">
+                <button class="palette-piece" data-piece="bK">♚</button>
+                <button class="palette-piece" data-piece="bQ">♛</button>
+                <button class="palette-piece" data-piece="bR">♜</button>
+                <button class="palette-piece" data-piece="bB">♝</button>
+                <button class="palette-piece" data-piece="bN">♞</button>
+                <button class="palette-piece" data-piece="bP">♟</button>
+              </div>
+            </div>
+
+            <!-- Chessground Board Container -->
+            <div id="editor-board" class="editor-board"></div>
+          </div>
 
           <!-- Position Controls (only visible in board mode) -->
           <div class="board-setup-only">

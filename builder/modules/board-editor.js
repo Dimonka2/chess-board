@@ -12,6 +12,8 @@ export function initializeEditorBoard() {
 
   state.editorBoard = Chessground(boardElement, {
     fen: state.fen,
+    coordinates: true,
+    ranksPosition: 'right', // Show rank numbers on right side (Lichess style)
     movable: {
       free: true, // Allow free dragging of pieces in edit mode
       color: 'both',
@@ -231,12 +233,17 @@ export function rebuildFenFromBoard() {
   try {
     const testChess = new Chess(state.fen);
     state.chess = testChess;
-    updateFenDisplay(state.fen);
+    updateFenDisplay(state.fen, true); // valid
     updatePreview();
     autoSave();
   } catch (e) {
-    console.error('Invalid FEN:', e);
-    updateFenDisplay(state.fen);
+    // FEN is invalid (e.g., no kings, wrong piece placement)
+    // This is OK during board setup - just show as invalid
+    console.log('FEN not yet valid (expected during setup):', e.message);
+    state.chess = null; // Clear chess instance until valid
+    updateFenDisplay(state.fen, false); // invalid
+    updatePreview();
+    autoSave();
   }
 }
 
@@ -253,11 +260,20 @@ export function loadStartPosition() {
 
 export function loadEmptyBoard() {
   state.fen = '8/8/8/8/8/8/8/8 w - - 0 1';
-  state.chess = new Chess(state.fen);
+
+  // chess.js requires kings, so we can't validate an empty board
+  // Just clear the board visually and update state
   state.editorBoard.set({ fen: state.fen });
+
+  // Update UI controls to match empty board
   decomposeFEN(state.fen);
   updateFenDisplay(state.fen);
+
+  // Don't try to create a Chess instance with an empty board
+  // The next piece placement will trigger rebuildFenFromBoard which will handle validation
+
   updatePreview();
+  autoSave();
   showToast('Loaded empty board', 'success');
 }
 
