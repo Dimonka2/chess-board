@@ -19,6 +19,8 @@
         <div class="dropdown">
           <button class="dropdown-toggle" id="menu-toggle">Menu ▾</button>
           <div class="dropdown-menu" id="dropdown-menu">
+            <button id="btn-import-lichess">♟️ Import from Lichess</button>
+            <div class="dropdown-divider"></div>
             <button id="btn-load">📂 Load from JSON</button>
             <button id="btn-save">💾 Save as JSON</button>
             <div class="dropdown-divider"></div>
@@ -132,7 +134,25 @@
             <button id="btn-clear-solution">Clear Solution</button>
           </div>
 
+          <!-- Premove Section -->
+          <div class="premove-section">
+            <h3>Premove Mode</h3>
+            <p class="premove-help">Enable if the first recorded move is the opponent's move (which sets up the puzzle position).</p>
+
+            <div class="premove-controls">
+              <label class="premove-checkbox">
+                <input type="checkbox" id="premove-enabled">
+                <span>First move is opponent's premove</span>
+              </label>
+            </div>
+
+            <div id="premove-info" class="premove-info" style="display: none;">
+              <!-- Dynamically updated by JavaScript -->
+            </div>
+          </div>
+
           <div class="solution-list">
+            <h3>Solution Moves</h3>
             <table id="solution-table">
               <thead>
                 <tr>
@@ -224,6 +244,42 @@
       <div class="dialog-footer">
         <button id="dialog-copy" class="btn-primary">Copy to Clipboard</button>
         <button id="dialog-cancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lichess Import Dialog -->
+  <div id="lichess-dialog" class="dialog-overlay">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h2>Import Puzzle from Lichess</h2>
+        <button class="dialog-close" id="lichess-dialog-close">✖</button>
+      </div>
+      <div class="dialog-body">
+        <p>Enter a Lichess puzzle ID or URL:</p>
+        <input type="text" id="lichess-puzzle-input" placeholder="e.g., sUum4 or https://lichess.org/training/sUum4" autofocus>
+
+        <div class="lichess-examples">
+          <p class="examples-label">Examples:</p>
+          <ul>
+            <li>Puzzle ID: <code>sUum4</code></li>
+            <li>Training URL: <code>https://lichess.org/training/sUum4</code></li>
+            <li>API URL: <code>https://lichess.org/api/puzzle/sUum4</code></li>
+          </ul>
+        </div>
+
+        <!-- Error message container -->
+        <div id="lichess-error" class="lichess-error" style="display: none;"></div>
+
+        <!-- Loading state -->
+        <div id="lichess-loading" class="lichess-loading" style="display: none;">
+          <div class="spinner"></div>
+          <p>Fetching puzzle from Lichess...</p>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button id="lichess-import-btn" class="btn-primary">Import Puzzle</button>
+        <button id="lichess-cancel-btn">Cancel</button>
       </div>
     </div>
   </div>

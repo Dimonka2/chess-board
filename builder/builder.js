@@ -14,13 +14,15 @@ import {
 } from './modules/board-editor.js';
 import {
   updateSolutionList,
+  updatePremoveDisplay,
   startRecording,
   stopRecording,
   clearSolution,
   rewindToMove,
   deleteMove,
   truncateFrom,
-  validateSolution
+  validateSolution,
+  togglePremove
 } from './modules/solution-editor.js';
 import { updatePreview } from './modules/preview.js';
 import {
@@ -31,6 +33,7 @@ import {
   newPuzzle,
   loadJson
 } from './modules/persistence.js';
+import { importLichessPuzzle } from './modules/lichess-import.js';
 
 // Expose solution functions globally for onclick handlers
 window.builderRewindToMove = rewindToMove;
@@ -125,6 +128,11 @@ function setupEventListeners() {
   document.getElementById('btn-stop-recording').addEventListener('click', stopRecording);
   document.getElementById('btn-clear-solution').addEventListener('click', clearSolution);
 
+  // Premove controls
+  document.getElementById('premove-enabled').addEventListener('change', (e) => {
+    togglePremove(e.target.checked);
+  });
+
   // Widget settings
   document.getElementById('widget-width').addEventListener('input', (e) => {
     state.meta.width = parseInt(e.target.value);
@@ -187,6 +195,11 @@ function setupEventListeners() {
     downloadJson();
   });
 
+  document.getElementById('btn-import-lichess').addEventListener('click', () => {
+    dropdownMenu.classList.remove('show');
+    showLichessImportDialog();
+  });
+
   // HTML Dialog
   const htmlDialog = document.getElementById('html-dialog');
   const dialogClose = document.getElementById('dialog-close');
@@ -214,6 +227,36 @@ function setupEventListeners() {
       htmlDialog.classList.remove('show');
     }
   });
+
+  // Lichess Import Dialog
+  const lichessDialog = document.getElementById('lichess-dialog');
+  const lichessDialogClose = document.getElementById('lichess-dialog-close');
+  const lichessCancelBtn = document.getElementById('lichess-cancel-btn');
+  const lichessImportBtn = document.getElementById('lichess-import-btn');
+  const lichessPuzzleInput = document.getElementById('lichess-puzzle-input');
+
+  lichessDialogClose.addEventListener('click', closeLichessImportDialog);
+  lichessCancelBtn.addEventListener('click', closeLichessImportDialog);
+  lichessImportBtn.addEventListener('click', handleLichessImport);
+
+  // Close dialog when clicking overlay
+  lichessDialog.addEventListener('click', (e) => {
+    if (e.target === lichessDialog) {
+      closeLichessImportDialog();
+    }
+  });
+
+  // Handle Enter key in input
+  lichessPuzzleInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleLichessImport();
+    }
+  });
+
+  // Clear error when user types
+  lichessPuzzleInput.addEventListener('input', () => {
+    document.getElementById('lichess-error').style.display = 'none';
+  });
 }
 
 // Show HTML snippet dialog
@@ -240,14 +283,23 @@ function buildHtmlSnippet() {
   const solution = state.solution.map(m => m.uci).join(',');
   const fenParts = state.fen.split(' ');
   const sideToMove = fenParts[1]; // 'w' or 'b'
-  const orientation = sideToMove === 'b' ? 'black' : 'white';
+
+  // If premove enabled, flip orientation
+  const orientation = state.premoveEnabled
+    ? (sideToMove === 'w' ? 'black' : 'white')
+    : (sideToMove === 'b' ? 'black' : 'white');
+
+  // Include premove-enabled flag if needed
+  const premoveAttr = state.premoveEnabled ? 'data-premove-enabled="true"' : '';
 
   return `<div class="chess-puzzle"
      data-fen="${state.fen}"
+     ${premoveAttr}
      data-solution="${solution}"
      data-width="${state.meta.width}"
      data-theme="${state.meta.theme}"
-     data-orientation="${orientation}"></div>`;
+     data-orientation="${orientation}"
+     data-stockfish-enabled="true"></div>`;
 }
 
 // Mode switching
@@ -278,4 +330,105 @@ function switchMode(mode) {
 
     showToast('Switched to Solution Recording mode - Click "Start Recording" to begin', 'info');
   }
+}
+
+// Lichess Import Functions
+function showLichessImportDialog() {
+  const dialog = document.getElementById('lichess-dialog');
+  const input = document.getElementById('lichess-puzzle-input');
+  const errorEl = document.getElementById('lichess-error');
+  const loadingEl = document.getElementById('lichess-loading');
+
+  // Reset dialog state
+  input.value = '';
+  errorEl.style.display = 'none';
+  loadingEl.style.display = 'none';
+
+  // Show dialog
+  dialog.classList.add('show');
+
+  // Auto-focus input
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeLichessImportDialog() {
+  const dialog = document.getElementById('lichess-dialog');
+  dialog.classList.remove('show');
+}
+
+async function handleLichessImport() {
+  const input = document.getElementById('lichess-puzzle-input');
+  const errorEl = document.getElementById('lichess-error');
+  const loadingEl = document.getElementById('lichess-loading');
+  const importBtn = document.getElementById('lichess-import-btn');
+  const cancelBtn = document.getElementById('lichess-cancel-btn');
+
+  const puzzleIdOrUrl = input.value.trim();
+
+  if (!puzzleIdOrUrl) {
+    showLichessError('Please enter a puzzle ID or URL.');
+    return;
+  }
+
+  // Hide error, show loading
+  errorEl.style.display = 'none';
+  loadingEl.style.display = 'flex';
+  importBtn.disabled = true;
+  cancelBtn.disabled = true;
+
+  try {
+    // Import puzzle from Lichess
+    const puzzleData = await importLichessPuzzle(puzzleIdOrUrl);
+
+    // Update builder state
+    state.fen = puzzleData.fen;
+    state.chess = new Chess(puzzleData.fen);
+    state.premoveEnabled = puzzleData.premoveEnabled;  // Flag that first move is opponent's
+    state.solution = puzzleData.solution;  // Includes opponent's move as first element
+    state.meta.title = puzzleData.meta.title;
+    state.meta.tags = puzzleData.meta.tags;
+    state.meta.difficulty = puzzleData.meta.difficulty;
+
+    // Update the editor board visual state with the new FEN
+    state.editorBoard.set({ fen: state.fen });
+
+    // Update UI controls to match the imported FEN
+    decomposeFEN(state.fen);
+    updateFenDisplay(state.fen);
+    updatePremoveDisplay();  // Update premove display
+    updateSolutionList();  // Update solution list to show imported moves
+    updatePreview();
+
+    // Update metadata inputs
+    document.getElementById('puzzle-title').value = state.meta.title;
+    document.getElementById('puzzle-tags').value = state.meta.tags.join(', ');
+    document.getElementById('puzzle-difficulty').value = state.meta.difficulty;
+
+    // Auto-save
+    autoSave();
+
+    // Close dialog
+    closeLichessImportDialog();
+
+    // Show success message
+    showToast(`Puzzle "${puzzleData.meta.lichessId}" imported successfully!`, 'success');
+
+    // Switch to board mode
+    switchMode('board');
+
+  } catch (error) {
+    // Show error
+    showLichessError(error.message);
+  } finally {
+    // Hide loading, enable buttons
+    loadingEl.style.display = 'none';
+    importBtn.disabled = false;
+    cancelBtn.disabled = false;
+  }
+}
+
+function showLichessError(message) {
+  const errorEl = document.getElementById('lichess-error');
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
 }

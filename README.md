@@ -5,6 +5,7 @@ Professional chess puzzle widget using chessground and chess.js. Create interact
 ## Features
 
 - ♟️ **Interactive Chess Puzzles** - Drag & drop pieces with solution validation
+- 🎭 **Premove Support** - Automatic opponent moves before puzzle starts (perfect for Lichess imports!)
 - 🔀 **Alternative Solutions** - Support multiple valid solution paths with `|` separator
 - 🌍 **Internationalization** - Multi-language support (English, German, extensible)
 - 🤖 **Stockfish Integration** - AI-powered counter-move feedback for wrong moves
@@ -70,6 +71,7 @@ Use these data attributes to configure your chess widgets:
 |-----------|----------|-------------|---------|
 | `data-fen` | Yes | Chess position in FEN notation | `"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"` |
 | `data-solution` | No | Solution moves (comma-separated). Use `\|` for alternative paths | `"e2e4,e7e5,Nf3\|e2e4,e7e5,Bc4"` |
+| `data-premove-enabled` | No | First move is auto-played as opponent's move (default: false) | `"true"` |
 | `data-width` | No | Board width in pixels (default: 400) | `"500"` |
 | `data-auto-flip` | No | Auto-rotate board for black's turn (default: false) | `"true"` |
 | `data-orientation` | No | Fixed board orientation: 'white' or 'black' | `"black"` |
@@ -152,6 +154,20 @@ Use these data attributes to configure your chess widgets:
 </div>
 ```
 
+### Premove (Lichess-Style Puzzles)
+```html
+<!-- Puzzle with opponent's premove (common in Lichess imports) -->
+<div class="chess-puzzle"
+     data-fen="rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 3"
+     data-solution="d2d4,e5d4,c2c3"
+     data-premove-enabled="true"
+     data-orientation="white">
+     <!-- First move (d2d4) is auto-played as opponent's move -->
+     <!-- Board automatically flips to show player's perspective -->
+     <!-- Perfect for imported Lichess puzzles! -->
+</div>
+```
+
 ## Development
 
 ### Development Setup
@@ -225,6 +241,38 @@ data-solution="e2e4,e7e5,Nf3|e2e4,e7e5,Bc4"
 This allows the puzzle to accept either `Nf3` OR `Bc4` as the third move. Perfect for tactical puzzles with multiple winning continuations!
 
 ## Advanced Features
+
+### Premove System
+
+The premove feature allows puzzles to start with an opponent's move being played automatically. This is perfect for Lichess puzzle imports where puzzles typically start after the opponent's last move.
+
+**How it works:**
+1. Set `data-premove-enabled="true"`
+2. Include the opponent's move as the **first** move in the solution
+3. The widget will automatically:
+   - Play the first move with animation (500ms delay)
+   - Flip the board to show the player's perspective
+   - Wait for the player to make their move
+4. When the puzzle is reset, the premove replays automatically
+
+**Example:**
+```html
+<div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+     data-solution="d2d4,f1e1,e5e4"
+     data-premove-enabled="true"
+     data-orientation="black">
+     <!-- d2d4 plays automatically as white's move -->
+     <!-- Board shows from black's perspective -->
+     <!-- Player must respond with Re1 -->
+</div>
+```
+
+**Benefits:**
+- ✅ Matches Lichess puzzle experience exactly
+- ✅ Clear visual feedback showing opponent's setup move
+- ✅ Automatic board orientation for better UX
+- ✅ Works seamlessly with reset functionality
 
 ### Internationalization
 

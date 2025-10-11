@@ -155,4 +155,11 @@ ChessWidget.prototype.reset = function() {
 
   this.statusElement.textContent = this.i18n.t('make_your_move');
   this.statusElement.className = 'chess-widget-status';
+
+  // If premove is enabled, replay it after reset
+  if (this.premoveEnabled && this.solutionValidator && this.solutionValidator.hasSolution()) {
+    setTimeout(() => {
+      this.playPremove();
+    }, 500);
+  }
 };

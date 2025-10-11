@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lichess Import - Core Logic Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #3291ff;
+      padding-bottom: 10px;
+    }
+
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .test-controls {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      width: 300px;
+      padding: 10px;
+      font-size: 14px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #3291ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #2070d0;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .result-box {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 15px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .success {
+      background: #d4edda;
+      border-color: #c3e6cb;
+      color: #155724;
+    }
+
+    .error {
+      background: #f8d7da;
+      border-color: #f5c6cb;
+      color: #721c24;
+    }
+
+    .test-cases {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .test-case-btn {
+      padding: 8px 12px;
+      background: #6c757d;
+      font-size: 13px;
+    }
+
+    .test-case-btn:hover {
+      background: #545b62;
+    }
+
+    .loading {
+      color: #007bff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Lichess Import - Core Logic Test</h1>
+
+  <div class="test-section">
+    <h2>Import Puzzle</h2>
+    <div class="test-controls">
+      <input type="text" id="puzzle-input" placeholder="Enter puzzle ID or URL (e.g., sUum4)" value="sUum4">
+      <button id="import-btn">Import Puzzle</button>
+    </div>
+
+    <div>
+      <strong>Quick Test Cases:</strong>
+      <div class="test-cases">
+        <button class="test-case-btn" data-id="sUum4">sUum4 (ELO 1000)</button>
+        <button class="test-case-btn" data-id="3Gw8p">3Gw8p (ELO 1500)</button>
+        <button class="test-case-btn" data-id="0009hL">0009hL (ELO 2000)</button>
+        <button class="test-case-btn" data-id="https://lichess.org/training/sUum4">Training URL</button>
+        <button class="test-case-btn" data-id="invalid123">Invalid ID</button>
+      </div>
+    </div>
+
+    <div id="result" class="result-box" style="display: none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-log"></div>
+  </div>
+
+  <!-- Load chess.js and widget bundle (for Chess library) -->
+  <script src="../dist/chess-widget.js"></script>
+
+  <!-- Load the lichess-import module -->
+  <script type="module">
+    import {
+      extractPuzzleId,
+      fetchLichessPuzzle,
+      deriveFenFromLichessPuzzle,
+      convertLichessSolution,
+      mapRatingToDifficulty,
+      importLichessPuzzle
+    } from './modules/lichess-import.js';
+
+    const puzzleInput = document.getElementById('puzzle-input');
+    const importBtn = document.getElementById('import-btn');
+    const resultBox = document.getElementById('result');
+    const testLog = document.getElementById('test-log');
+
+    // Quick test case buttons
+    document.querySelectorAll('.test-case-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        puzzleInput.value = btn.dataset.id;
+        importBtn.click();
+      });
+    });
+
+    // Main import button
+    importBtn.addEventListener('click', async () => {
+      const input = puzzleInput.value.trim();
+
+      if (!input) {
+        showResult('Please enter a puzzle ID or URL.', 'error');
+        return;
+      }
+
+      // Show loading state
+      importBtn.disabled = true;
+      importBtn.textContent = 'Importing...';
+      showResult('Fetching puzzle from Lichess...', 'loading');
+
+      try {
+        // Call the main import function
+        const puzzleData = await importLichessPuzzle(input);
+
+        // Show success
+        const output = formatPuzzleData(puzzleData);
+        showResult(output, 'success');
+        logTest(`✅ Successfully imported puzzle: ${puzzleData.meta.lichessId}`);
+
+        // Log individual components
+        console.log('Imported Puzzle Data:', puzzleData);
+        console.log('FEN:', puzzleData.fen);
+        console.log('Solution:', puzzleData.solution);
+        console.log('Metadata:', puzzleData.meta);
+
+      } catch (error) {
+        // Show error
+        showResult(`❌ Error: ${error.message}`, 'error');
+        logTest(`❌ Failed to import: ${error.message}`);
+        console.error('Import error:', error);
+
+      } finally {
+        // Reset button
+        importBtn.disabled = false;
+        importBtn.textContent = 'Import Puzzle';
+      }
+    });
+
+    // Helper: Show result in the result box
+    function showResult(message, type = '') {
+      resultBox.style.display = 'block';
+      resultBox.textContent = message;
+      resultBox.className = 'result-box';
+
+      if (type === 'success') {
+        resultBox.classList.add('success');
+      } else if (type === 'error') {
+        resultBox.classList.add('error');
+      } else if (type === 'loading') {
+        resultBox.classList.add('loading');
+      }
+    }
+
+    // Helper: Format puzzle data for display
+    function formatPuzzleData(data) {
+      return `✅ Puzzle Imported Successfully!
+
+Puzzle ID: ${data.meta.lichessId}
+Game ID: ${data.meta.lichessGameId}
+Rating: ${data.meta.lichessRating}
+Difficulty: ${data.meta.difficulty}
+Themes: ${data.meta.lichessThemes.join(', ')}
+Plays: ${data.meta.lichessPlays}
+
+FEN:
+${data.fen}
+
+Solution (${data.solution.length} moves):
+${data.solution.map((m, i) => `  ${i + 1}. ${m.san} (${m.uci})`).join('\n')}
+
+Metadata:
+  Title: ${data.meta.title}
+  Tags: ${data.meta.tags.join(', ')}
+`;
+    }
+
+    // Helper: Log test result
+    function logTest(message) {
+      const logEntry = document.createElement('div');
+      logEntry.style.padding = '8px';
+      logEntry.style.borderLeft = '3px solid #3291ff';
+      logEntry.style.marginBottom = '8px';
+      logEntry.style.background = '#f8f9fa';
+      logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      testLog.insertBefore(logEntry, testLog.firstChild);
+    }
+
+    // Run initial test on page load
+    window.addEventListener('load', () => {
+      logTest('Test page loaded. Ready to test Lichess import!');
+      console.log('Lichess import module loaded successfully');
+      console.log('Available functions:', {
+        extractPuzzleId,
+        fetchLichessPuzzle,
+        deriveFenFromLichessPuzzle,
+        convertLichessSolution,
+        mapRatingToDifficulty,
+        importLichessPuzzle
+      });
+    });
+
+    // Expose functions globally for console testing
+    window.lichessImport = {
+      extractPuzzleId,
+      fetchLichessPuzzle,
+      deriveFenFromLichessPuzzle,
+      convertLichessSolution,
+      mapRatingToDifficulty,
+      importLichessPuzzle
+    };
+  </script>
+</body>
+</html>

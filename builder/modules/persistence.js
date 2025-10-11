@@ -3,7 +3,7 @@
 import { state } from './state.js';
 import { decomposeFEN } from './fen-utils.js';
 import { showToast, updateFenDisplay } from './ui-utils.js';
-import { updateSolutionList, validateSolution } from './solution-editor.js';
+import { updateSolutionList, updatePremoveDisplay, validateSolution } from './solution-editor.js';
 import { updatePreview } from './preview.js';
 
 // Auto-save on changes
@@ -18,6 +18,7 @@ function saveToLocalStorage() {
   try {
     localStorage.setItem('chess-puzzle-builder-draft', JSON.stringify({
       fen: state.fen,
+      premoveEnabled: state.premoveEnabled,
       solution: state.solution,
       meta: state.meta
     }));
@@ -33,25 +34,28 @@ export function loadFromLocalStorage() {
       const data = JSON.parse(saved);
       // Only load if not default state
       if (data.solution.length > 0 || data.meta.title) {
-        if (confirm('Found a saved draft. Load it?')) {
-          state.fen = data.fen;
-          state.solution = data.solution;
-          state.meta = { ...state.meta, ...data.meta };
-          state.chess = new Chess(state.fen);
+        // Auto-load without confirmation (as requested by user)
+        state.fen = data.fen;
+        state.premoveEnabled = data.premoveEnabled || false;
+        state.solution = data.solution;
+        state.meta = { ...state.meta, ...data.meta };
+        state.chess = new Chess(state.fen);
 
-          state.editorBoard.set({ fen: state.fen });
-          decomposeFEN(state.fen);
-          updateFenDisplay(state.fen);
-          updateSolutionList();
-          updatePreview();
+        state.editorBoard.set({ fen: state.fen });
+        decomposeFEN(state.fen);
+        updateFenDisplay(state.fen);
+        updatePremoveDisplay();
+        updateSolutionList();
+        updatePreview();
 
-          // Update metadata fields
-          document.getElementById('puzzle-title').value = state.meta.title || '';
-          document.getElementById('puzzle-tags').value = state.meta.tags ? state.meta.tags.join(', ') : '';
-          document.getElementById('puzzle-difficulty').value = state.meta.difficulty || '';
-          document.getElementById('widget-width').value = state.meta.width || 400;
-          document.getElementById('widget-theme').value = state.meta.theme || 'blue';
-        }
+        // Update metadata fields
+        document.getElementById('puzzle-title').value = state.meta.title || '';
+        document.getElementById('puzzle-tags').value = state.meta.tags ? state.meta.tags.join(', ') : '';
+        document.getElementById('puzzle-difficulty').value = state.meta.difficulty || '';
+        document.getElementById('widget-width').value = state.meta.width || 400;
+        document.getElementById('widget-theme').value = state.meta.theme || 'blue';
+
+        showToast('Draft loaded from localStorage', 'info');
       }
     }
   } catch (e) {
@@ -103,6 +107,7 @@ export function downloadJson() {
   const data = {
     version: 1,
     fen: state.fen,
+    premoveEnabled: state.premoveEnabled,
     solution: state.solution,
     meta: state.meta
   };
@@ -137,6 +142,7 @@ export function loadJson() {
       try {
         const data = JSON.parse(e.target.result);
         state.fen = data.fen;
+        state.premoveEnabled = data.premoveEnabled || false;
         state.solution = data.solution;
         state.meta = { ...state.meta, ...data.meta };
         state.chess = new Chess(state.fen);
@@ -144,6 +150,7 @@ export function loadJson() {
         state.editorBoard.set({ fen: state.fen });
         decomposeFEN(state.fen);
         updateFenDisplay(state.fen);
+        updatePremoveDisplay();
         updateSolutionList();
         updatePreview();
 

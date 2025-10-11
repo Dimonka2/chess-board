@@ -301,3 +301,66 @@ ChessWidget.prototype.showFeedback = function(type, params = {}) {
     }, 2000);
   }
 };
+
+/**
+ * Play the premove (opponent's setup move)
+ * This is called automatically when premoveEnabled is true
+ */
+ChessWidget.prototype.playPremove = function() {
+  if (!this.solutionValidator || !this.solutionValidator.hasSolution()) {
+    return;
+  }
+
+  // Get the first move from solution (this is the opponent's premove)
+  const expectedMoves = this.solutionValidator.getExpectedMoves(0);
+
+  if (expectedMoves.length > 0) {
+    const premoveNotation = expectedMoves[0];
+
+    // Parse and play the premove directly (bypass validation)
+    let move = null;
+
+    // Try SAN notation first
+    try {
+      move = this.chess.move(premoveNotation);
+    } catch (e) {
+      // SAN failed, try UCI notation
+    }
+
+    // If SAN failed, try UCI notation
+    if (!move && premoveNotation.length >= 4) {
+      const from = premoveNotation.substring(0, 2);
+      const to = premoveNotation.substring(2, 4);
+      const promotion = premoveNotation.length > 4 ? premoveNotation[4] : undefined;
+
+      try {
+        move = this.chess.move({ from, to, promotion });
+      } catch (e) {
+        console.error('Failed to play premove:', e);
+      }
+    }
+
+    if (move) {
+      // Update board state with the premove (don't trigger move validation)
+      const currentTurn = this.chess.turn();
+
+      this.chessground.set({
+        fen: this.chess.fen(),
+        orientation: this.getOrientation(),
+        turnColor: currentTurn === 'w' ? 'white' : 'black',
+        lastMove: [move.from, move.to],
+        movable: {
+          color: currentTurn === 'w' ? 'white' : 'black',
+          dests: this.getDests()
+        }
+      });
+
+      // Increment move index to skip the premove in solution validation
+      this.currentMoveIndex++;
+
+      // Show status message
+      this.statusElement.textContent = this.i18n.t('make_your_move');
+      this.statusElement.className = 'chess-widget-status';
+    }
+  }
+};

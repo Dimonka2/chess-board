@@ -4,6 +4,36 @@ import { state } from './state.js';
 import { showToast, updateFenDisplay } from './ui-utils.js';
 import { updatePreview } from './preview.js';
 
+// Update premove display
+export function updatePremoveDisplay() {
+  const premoveCheckbox = document.getElementById('premove-enabled');
+  const premoveInfo = document.getElementById('premove-info');
+
+  // Update checkbox state
+  premoveCheckbox.checked = state.premoveEnabled;
+
+  // Update info text
+  if (state.premoveEnabled && state.solution.length > 0) {
+    premoveInfo.innerHTML = `
+      <div class="premove-active">
+        <span class="premove-icon">✓</span>
+        <span>First move (<strong>${state.solution[0].san}</strong>) will be auto-played as opponent's move.</span>
+      </div>
+    `;
+    premoveInfo.style.display = 'block';
+  } else if (state.premoveEnabled) {
+    premoveInfo.innerHTML = `
+      <div class="premove-active">
+        <span class="premove-icon">✓</span>
+        <span>Premove enabled. Record the opponent's first move, then your solution moves.</span>
+      </div>
+    `;
+    premoveInfo.style.display = 'block';
+  } else {
+    premoveInfo.style.display = 'none';
+  }
+}
+
 // Update solution list table
 export function updateSolutionList() {
   const tbody = document.getElementById('solution-tbody');
@@ -239,5 +269,19 @@ export function validateSolution() {
       valid: false,
       message: `Validation error: ${e.message}`
     };
+  }
+}
+
+// Premove toggle handler
+export function togglePremove(enabled) {
+  state.premoveEnabled = enabled;
+
+  updatePremoveDisplay();
+  updatePreview();
+
+  if (enabled) {
+    showToast('Premove enabled - First solution move will be auto-played', 'info');
+  } else {
+    showToast('Premove disabled - Puzzle starts from current position', 'info');
   }
 }

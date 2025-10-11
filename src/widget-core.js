@@ -63,6 +63,9 @@ class ChessWidget {
     this.autoFlip = parseBoolean(element.dataset.autoFlip, false);
     this.fixedOrientation = element.dataset.orientation || null; // 'white', 'black', or null for auto
 
+    // Premove configuration
+    this.premoveEnabled = parseBoolean(element.dataset.premoveEnabled, false);
+
     // Stockfish configuration (for future Phase 2)
     this.stockfishEnabled = parseBoolean(element.dataset.stockfishEnabled, false);
     this.stockfishDepth = parseInteger(element.dataset.stockfishDepth, 12);
@@ -88,6 +91,13 @@ class ChessWidget {
 
       // Create controls
       this.createControls();
+
+      // If premove is enabled, play first move automatically
+      if (this.premoveEnabled && this.solutionValidator && this.solutionValidator.hasSolution()) {
+        setTimeout(() => {
+          this.playPremove();
+        }, 500);
+      }
 
       console.log('Chess widget initialized successfully');
     } catch (error) {
