@@ -143,13 +143,34 @@
             color: #666;
             font-style: italic;
         }
+
+        .header-links {
+            text-align: center;
+            margin: -20px 0 40px 0;
+        }
+
+        .header-links a {
+            color: #3291ff;
+            text-decoration: none;
+            font-size: 16px;
+            margin: 0 16px;
+            font-weight: 500;
+        }
+
+        .header-links a:hover {
+            text-decoration: underline;
+        }
     </style>
-    
+
     <!-- Production CSS - comment out for local Vite development -->
     <link rel="stylesheet" href="chess-widget.min.css">
 </head>
 <body>
     <h1>Chess Widget Demo</h1>
+    <div class="header-links">
+        <a href="https://github.com/Dimonka2/chess-board" target="_blank">📦 GitHub Repository</a>
+        <a href="https://github.com/Dimonka2/chess-board#readme" target="_blank">📖 Documentation</a>
+    </div>
     
     <div class="demo-section">
         <h2>Tactical Puzzles by ELO Rating</h2>

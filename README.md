@@ -2,6 +2,18 @@
 
 Professional chess puzzle widget using chessground and chess.js. Create interactive chess experiences like Lichess with just 2 files - completely standalone and offline-ready.
 
+## 🎮 Live Demo
+
+**[Try the interactive demo here!](https://dimonka2.github.io/chess-board/demo/)**
+
+Experience 20+ real Lichess puzzles ranging from ELO 600 to 2400, featuring:
+- ♟️ Classic tactical themes (Forks, Pins, Discovered Attacks)
+- 🤖 Stockfish AI counter-move feedback with visual arrows
+- 🌍 Multi-language support (English/German)
+- 🎭 Premove system for Lichess-style puzzle imports
+
+**Perfect for**: Puzzle websites, chess training apps, blog articles, educational platforms
+
 ## Features
 
 - ♟️ **Interactive Chess Puzzles** - Drag & drop pieces with solution validation
