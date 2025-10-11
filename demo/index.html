@@ -145,10 +145,11 @@
         }
     </style>
     
-    <!-- Vite will handle CSS imports via the module script -->
+    <!-- Production CSS - comment out for local Vite development -->
+    <link rel="stylesheet" href="chess-widget.min.css">
 </head>
 <body>
-    <h1>Chess Widget Demo - Live Development!</h1>
+    <h1>Chess Widget Demo</h1>
     
     <div class="demo-section">
         <h2>Tactical Puzzles by ELO Rating</h2>
@@ -173,20 +174,13 @@
             <div class="elo-group active" data-elo="600">
                 <div class="puzzle-item">
                     <h4>Back-Rank Mate</h4>
-                    <p>Back-rank mate: 1.Re8#</p>
-                    <div class="chess-puzzle" 
-                         data-fen="rnb3kr/p4ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1"
-                         data-solution="e1e8"
-                         data-width="400">
-                    </div>
-                </div>
-                <div class="puzzle-item">
-                    <h4>Knight Fork</h4>
-                    <p>Knight fork: 1.Nd6+ Kd8 2.Nxb7 wins the queen</p>
-                    <div class="chess-puzzle" 
-                         data-fen="r3k2r/pq1p1ppp/8/5N2/8/8/5PPP/6K1 w - - 0 1"
-                         data-solution="f5d6,e8d8,d6b7"
-                         data-width="400">
+                    <p>Lichess #jbwGi - Back-rank mate: Black plays Rb1, White must defend with Re1</p>
+                    <div class="chess-puzzle"
+                         data-fen="1r6/2p2pkp/2npb1p1/4p3/4P3/RBPP1N2/5PPP/6K1 w - - 1 24"
+                         data-premove-enabled="true"
+                         data-solution="b3e6,b8b1,f3e1,b1e1"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -194,12 +188,14 @@
             <!-- ELO 800 Puzzles -->
             <div class="elo-group" data-elo="800">
                 <div class="puzzle-item">
-                    <h4>Pin Tactic</h4>
-                    <p>Pin: the queen on h7 is pinned, so 1.Nxc5 wins the bishop</p>
-                    <div class="chess-puzzle" 
-                         data-fen="5r1k/pppp1ppq/8/5N2/8/3N4/PPPPPP1P/4K1R1 w - - 0 1"
-                         data-solution="f5c5"
-                         data-width="400">
+                    <h4>Endgame Mate in 2</h4>
+                    <p>Lichess #RLHH3 - White plays Ra7, black must respond Rd1+, then Kc2 and Ne3#</p>
+                    <div class="chess-puzzle"
+                         data-fen="8/1R4p1/4p1kp/3rBn2/p4P2/2P5/PP5P/1K6 w - - 1 35"
+                         data-premove-enabled="true"
+                         data-solution="b7a7,d5d1,b1c2,f5e3"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -207,12 +203,14 @@
             <!-- ELO 1000 Puzzles -->
             <div class="elo-group" data-elo="1000">
                 <div class="puzzle-item">
-                    <h4>Discovered Attack</h4>
-                    <p>Discovered attack: 1.Bxh7+!!—rook checks the king while the bishop captures the queen</p>
-                    <div class="chess-puzzle" 
-                         data-fen="r1n1k2r/pppp1ppq/8/8/8/8/PPPP1PPP/4R1K1 w - - 0 1"
-                         data-solution="Bxh7+"
-                         data-width="400">
+                    <h4>Mate in 2</h4>
+                    <p>Lichess #diRlH - Black plays Kf8, White responds Ba3 to control c5</p>
+                    <div class="chess-puzzle"
+                         data-fen="rnb1k2r/ppp2Ppp/8/8/2B5/2P5/P1K3PP/R1B3Nn b kq - 0 11"
+                         data-premove-enabled="true"
+                         data-solution="e8f8,c1a3,c7c5,a3c5"
+                         data-width="400"
+                         data-orientation="white">
                     </div>
                 </div>
             </div>
@@ -220,12 +218,14 @@
             <!-- ELO 1200 Puzzles -->
             <div class="elo-group" data-elo="1200">
                 <div class="puzzle-item">
-                    <h4>Skewer Tactic</h4>
-                    <p>Skewer: 1.Rf8+ Kg7 2.Rxa8 wins the rook</p>
-                    <div class="chess-puzzle" 
-                         data-fen="5rkr/ppppp2p/8/8/8/8/6PP/5RK1 w - - 0 1"
-                         data-solution="f1f8,g8g7,f8a8"
-                         data-width="400">
+                    <h4>Rook Endgame Mate</h4>
+                    <p>Lichess #oqrBK - Black plays Kg5, White responds Rg4+ then Rh1#</p>
+                    <div class="chess-puzzle"
+                         data-fen="5r2/6p1/1p1p1r2/pPp1p3/P1PpPk1R/3P1P2/4K1P1/6R1 b - - 0 40"
+                         data-premove-enabled="true"
+                         data-solution="f4g5,h4g4,g5h6,g1h1"
+                         data-width="400"
+                         data-orientation="white">
                     </div>
                 </div>
             </div>
@@ -233,12 +233,14 @@
             <!-- ELO 1400 Puzzles -->
             <div class="elo-group" data-elo="1400">
                 <div class="puzzle-item">
-                    <h4>Greek Gift Sacrifice</h4>
-                    <p>Greek-Gift sacrifice: 1.Bxh7+ Kxh7 2.Ng5+ Kg8 3.Qh7#</p>
-                    <div class="chess-puzzle" 
-                         data-fen="5r1k/pppppppp/8/8/8/3B1N2/PPQ2PPP/5RK1 w - - 0 1"
-                         data-solution="Bxh7+,Kxh7,Ng5+,Kg8,Qh7#"
-                         data-width="400">
+                    <h4>Hook Mate</h4>
+                    <p>Lichess #BveME - White plays Rc5, Black responds Rd1+, then Kf2 and Rf1#</p>
+                    <div class="chess-puzzle"
+                         data-fen="3r1k2/1R6/p7/2b1R3/5p2/4n3/PPP1N1PP/4K3 w - - 1 31"
+                         data-premove-enabled="true"
+                         data-solution="e5c5,d8d1,e1f2,d1f1"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -246,12 +248,14 @@
             <!-- ELO 1600 Puzzles -->
             <div class="elo-group" data-elo="1600">
                 <div class="puzzle-item">
-                    <h4>Smothered Mate</h4>
-                    <p>Smothered mate: 1.Qg8+!! Rxg8 2.Nf7#</p>
-                    <div class="chess-puzzle" 
-                         data-fen="5r1k/4q1pp/8/8/8/1B1Q4/8/6K1 w - - 0 1"
-                         data-solution="Qg8+,Rxg8,Nf7#"
-                         data-width="400">
+                    <h4>Fork Endgame</h4>
+                    <p>Lichess #sYcXL - White plays Rxf2, Black responds Qxf2+, then Kh2 and Qg2#</p>
+                    <div class="chess-puzzle"
+                         data-fen="6k1/p2Q3p/8/3p2p1/8/1P2q2P/P1r2rP1/4RRK1 w - - 0 34"
+                         data-premove-enabled="true"
+                         data-solution="f1f2,e3f2,g1h2,f2g2"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -259,12 +263,14 @@
             <!-- ELO 1800 Puzzles -->
             <div class="elo-group" data-elo="1800">
                 <div class="puzzle-item">
-                    <h4>Boden's Mate</h4>
-                    <p>Boden's Mate: 1.Rxc6+! bxc6 2.Ba6#</p>
-                    <div class="chess-puzzle" 
-                         data-fen="2kr4/pppppppp/2p5/8/6B1/8/8/2R1KB2 w - - 0 1"
-                         data-solution="Rxc6+,bxc6,Ba6#"
-                         data-width="400">
+                    <h4>Mate in 2 Middlegame</h4>
+                    <p>Lichess #qGdZQ - White plays Kf4, Black responds Qh2+, then g3 and Qxg3#</p>
+                    <div class="chess-puzzle"
+                         data-fen="2R5/p4p2/1p4k1/5nB1/4Q3/1P3PKP/4R1P1/3r3q w - - 3 42"
+                         data-premove-enabled="true"
+                         data-solution="g3f4,h1h2,g2g3,h2g3"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -272,12 +278,14 @@
             <!-- ELO 2000 Puzzles -->
             <div class="elo-group" data-elo="2000">
                 <div class="puzzle-item">
-                    <h4>Underpromotion Mate</h4>
-                    <p>Underpromotion mate: 1.g8=R# (promotion to a queen would be stalemate)</p>
-                    <div class="chess-puzzle" 
-                         data-fen="7k/6Pp/8/7K/8/8/8/8 w - - 0 1"
-                         data-solution="g8=R#"
-                         data-width="400">
+                    <h4>Master Endgame</h4>
+                    <p>Lichess #nR6zG - Master vs Master: White plays Ke1, Black responds Qe3+, then Kd1 and Bb3#</p>
+                    <div class="chess-puzzle"
+                         data-fen="R7/5p1k/2p1b1p1/2P4p/1P5P/5qP1/8/Q4K2 w - - 0 55"
+                         data-premove-enabled="true"
+                         data-solution="f1e1,f3e3,e1d1,e6b3"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -285,12 +293,14 @@
             <!-- ELO 2200 Puzzles -->
             <div class="elo-group" data-elo="2200">
                 <div class="puzzle-item">
-                    <h4>Interference</h4>
-                    <p>Interference: 1.Bf7!! (or …Rxf7) 2.Qh7#</p>
-                    <div class="chess-puzzle" 
-                         data-fen="5rnk/4q1pp/8/8/8/1B1Q4/8/6K1 w - - 0 1"
-                         data-solution="Bf7,Qxf7,Qh7#"
-                         data-width="400">
+                    <h4>Kingside Attack Mate in 3</h4>
+                    <p>Lichess #U5No7 - Attraction pattern: Black plays ...Rxf4, White Qxh8+, then Kf7, g6+, Kg6, and Qh5#</p>
+                    <div class="chess-puzzle"
+                         data-fen="rnbq1rk1/pp1nb1p1/4p3/3pP1PQ/3p1P2/2P5/PP1N2P1/R1B1K2R b KQ - 2 13"
+                         data-premove-enabled="true"
+                         data-solution="f8f4,h5h8,g8f7,g5g6,f7g6,h8h5"
+                         data-width="400"
+                         data-orientation="white">
                     </div>
                 </div>
             </div>
@@ -298,12 +308,14 @@
             <!-- ELO 2400 Puzzles -->
             <div class="elo-group" data-elo="2400">
                 <div class="puzzle-item">
-                    <h4>Double Sacrifice</h4>
-                    <p>Double sacrifice: 1.Rxh7+! Kxh7 2.Ng5+ Kg8 3.Qh5 f6 4.Qh7#</p>
-                    <div class="chess-puzzle" 
-                         data-fen="r5k1/5pp1/8/6N1/8/8/2B5/3QK2R w - - 0 1"
-                         data-solution="Rxh7+,Kxh7,Ng5+,Kg8,Qh5,f6,Qh7#"
-                         data-width="400">
+                    <h4>Complex Endgame Mate in 3</h4>
+                    <p>Lichess #rfaGy - White plays Bb4, Black responds Rxf2+, then Kg1, Rg2+, Kf1, and Rxf2#</p>
+                    <div class="chess-puzzle"
+                         data-fen="6rk/1R6/2RB3p/8/1p2p3/1P1n3P/r5P1/5K2 w - - 6 45"
+                         data-premove-enabled="true"
+                         data-solution="d6b4,a2f2,f1g1,f2g2,g1f1,g2f2"
+                         data-width="400"
+                         data-orientation="black">
                     </div>
                 </div>
             </div>
@@ -326,16 +338,18 @@
     </div>
 
     <div class="demo-section">
-        <h2>Tactical Puzzle</h2>
+        <h2>Fork Tactic</h2>
         <div class="puzzle-info">
-            <h3>Fork Tactic</h3>
-            <p>Black to move. Find the knight fork that wins material. Solution: Ne2+</p>
+            <h3>Knight Fork</h3>
+            <p>Lichess #NOb2c (ELO 900) - Black plays ...Qxd4, White responds Ne6, then Kf6, and Nxd4</p>
         </div>
         <div class="puzzle-container">
-            <div class="chess-puzzle" 
-                 data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 1"
-                 data-solution="f6e2"
-                 data-width="400">
+            <div class="chess-puzzle"
+                 data-fen="2r5/1bN3k1/p5p1/1p1p3p/1P1P4/P3q1P1/2Q4P/2R2K2 b - - 1 34"
+                 data-premove-enabled="true"
+                 data-solution="e3d4,c7e6,g7f6,e6d4"
+                 data-width="400"
+                 data-orientation="white">
             </div>
         </div>
     </div>
@@ -343,29 +357,33 @@
     <div class="demo-section">
         <h2>Pin Tactic</h2>
         <div class="puzzle-info">
-            <h3>Win Material with Pin</h3>
-            <p>White to move. Use the pin to win the black queen. Solution: Bb5+</p>
+            <h3>Pin Leading to Mate</h3>
+            <p>Lichess #sTLMK (ELO 1260 Master Game) - Black plays ...Qxf6, White Re8+, then Kg7, and Nh5#</p>
         </div>
         <div class="puzzle-container">
-            <div class="chess-puzzle" 
-                 data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1"
-                 data-solution="c4b5"
-                 data-width="400">
+            <div class="chess-puzzle"
+                 data-fen="6k1/1p3p1p/p2r2p1/3pqbQ1/5N2/2P1R2P/PP3PP1/6K1 b - - 3 30"
+                 data-premove-enabled="true"
+                 data-solution="e5f6,e3e8,g8g7,f4h5"
+                 data-width="400"
+                 data-orientation="white">
             </div>
         </div>
     </div>
 
     <div class="demo-section">
-        <h2>Discovery Attack</h2>
+        <h2>Discovered Attack</h2>
         <div class="puzzle-info">
-            <h3>Double Attack</h3>
-            <p>White to move. Find the discovered attack that wins material. Solution: Nd5</p>
+            <h3>Discovered Attack Wins Material</h3>
+            <p>Lichess #fOtTP (ELO 1050 Master Game) - White plays Nd4, Black responds ...Bxa2, then Nxa2, and ...Qxd6</p>
         </div>
         <div class="puzzle-container">
-            <div class="chess-puzzle" 
-                 data-fen="r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w - - 0 1"
-                 data-solution="f3d5"
-                 data-width="400">
+            <div class="chess-puzzle"
+                 data-fen="rn3rk1/5pbp/2pQbqp1/1p6/p3P3/P1N2P2/1PP1N1PP/1K1R1B1R w - - 0 14"
+                 data-premove-enabled="true"
+                 data-solution="e2d4,e6a2,c3a2,f6d6"
+                 data-width="400"
+                 data-orientation="black">
             </div>
         </div>
     </div>
@@ -519,9 +537,12 @@
         <p>The widget is completely standalone with all dependencies (chessground and chess.js) bundled - no CDN calls required!</p>
     </div>
     
-    <!-- Load the chess widget via Vite -->
-    <script type="module" src="./main.js"></script>
-    
+    <!-- Production JS - comment out for local Vite development -->
+    <script src="chess-widget.min.js"></script>
+
+    <!-- Development JS - uncomment for local Vite development -->
+    <!-- <script type="module" src="./main.js"></script> -->
+
     <script>
         // ELO selector functionality
         document.addEventListener('DOMContentLoaded', function() {
