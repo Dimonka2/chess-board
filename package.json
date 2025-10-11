@@ -5,6 +5,7 @@
   "main": "dist/chess-widget.min.js",
   "scripts": {
     "build": "node build.js",
+    "build:builder": "npm run build && node build-builder.js",
     "dev": "vite demo --port=3001",
     "dev:prod": "npm run build && vite demo --port=3001",
     "dev:builder": "vite --config vite.builder.config.js"

@@ -14,6 +14,16 @@ Experience 20+ real Lichess puzzles ranging from ELO 600 to 2400, featuring:
 
 **Perfect for**: Puzzle websites, chess training apps, blog articles, educational platforms
 
+## 🛠️ Puzzle Builder Tool
+
+**Visual puzzle creation tool with live preview!**
+
+Create custom chess puzzles with our interactive builder - no coding required! Features drag-and-drop board setup, solution recording, Lichess imports, and instant HTML export.
+
+**[Try the puzzle builder live here!](https://dimonka2.github.io/chess-board/dist/builder/)**
+
+[Learn more about the Builder →](builder/README.md)
+
 ## Features
 
 - ♟️ **Interactive Chess Puzzles** - Drag & drop pieces with solution validation
@@ -206,10 +216,12 @@ The build script automatically:
 ### Commands
 
 ```bash
-npm install         # Install all dependencies
-npm run build       # Create production files in dist/
-npm run dev         # Start development server with live reload
-npm run dev:prod    # Test production build with dev server
+npm install           # Install all dependencies
+npm run build         # Create widget production files in dist/
+npm run build:builder # Build widget + builder for production
+npm run dev           # Start demo dev server with live reload
+npm run dev:prod      # Test production build with dev server
+npm run dev:builder   # Start builder dev server
 ```
 
 ### Development Features
@@ -331,6 +343,34 @@ The widget bundles these libraries internally:
 - [chess.js](https://github.com/jhlywa/chess.js) v1.4.0 - Chess logic and validation
 
 All dependencies are bundled during the build process - no external CDN calls are made.
+
+## 🚀 GitHub Pages Deployment
+
+Both the demo and builder are ready for GitHub Pages deployment!
+
+### Demo Deployment
+
+1. Go to **Settings → Pages** in your GitHub repository
+2. Set source: **Deploy from a branch**
+3. Select branch: **main** and folder: **/demo**
+4. Your demo will be live at: `https://username.github.io/repo-name/`
+
+[See demo deployment guide →](demo/README.md)
+
+### Builder Deployment
+
+1. First, build the builder: `npm run build:builder`
+2. Go to **Settings → Pages** in your GitHub repository
+3. Set source: **Deploy from a branch**
+4. Select branch: **main** and folder: **/dist/builder**
+5. Your builder will be live at: `https://username.github.io/repo-name/`
+
+[See builder deployment guide →](builder/README.md)
+
+**Note**:
+- Demo deploys from `/demo` directory (production-ready by default)
+- Builder deploys from `/dist/builder` directory (requires `npm run build:builder` first)
+- You can deploy both by creating separate GitHub Pages sites or separate repositories
 
 ## License
 
