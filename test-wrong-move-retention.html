@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wrong Move Retention Test - Chess Widget</title>
+  <link rel="stylesheet" href="dist/chess-widget.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .puzzle-row {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .puzzle-container {
+      flex: 0 0 auto;
+    }
+    .puzzle-label {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #2196F3;
+    }
+    .code-block {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    .info-box {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 15px 0;
+      border-left: 4px solid #2196F3;
+    }
+    .instructions {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 15px 0;
+      border-left: 4px solid #ffc107;
+    }
+    .instructions h3 {
+      margin-top: 0;
+    }
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    .feature-list li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+    }
+    .feature-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #4CAF50;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Phase 2: Wrong Move Retention Test</h1>
+
+  <div class="info-box">
+    <h3>Phase 2 Features:</h3>
+    <ul class="feature-list">
+      <li>Optional wrong move retention mode (keeps mistakes visible)</li>
+      <li>Manual revert functionality via "Undo Wrong Move" button</li>
+      <li>Dual arrow display: red (counter-move) + yellow (your wrong move)</li>
+      <li>Integration with Stockfish counter-move system</li>
+      <li>State management integration (wrong_move state → in_progress on revert)</li>
+    </ul>
+  </div>
+
+  <div class="instructions">
+    <h3>How to Test:</h3>
+    <ol>
+      <li><strong>Left Puzzle (Auto-Revert):</strong> Make a wrong move - it will show the counter-move and automatically revert after 2 seconds</li>
+      <li><strong>Right Puzzle (Retention Mode):</strong> Make a wrong move - it will show BOTH arrows (red & yellow) and wait for you to click "Undo Wrong Move"</li>
+      <li><strong>Correct Solution:</strong> For both puzzles, the correct moves are: <code>f3e5</code>, then <code>e1g1</code> (castles)</li>
+    </ol>
+  </div>
+
+  <div class="test-section">
+    <h2>Side-by-Side Comparison</h2>
+
+    <div class="puzzle-row">
+      <!-- Auto-revert mode (default) -->
+      <div class="puzzle-container">
+        <div class="puzzle-label">🔄 Auto-Revert Mode (Default)</div>
+        <div class="chess-puzzle" id="puzzle-auto"
+             data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+             data-solution="f3e5,f6e4,e1g1"
+             data-width="400"
+             data-expose-state-events="true"
+             data-stockfish-enabled="true"
+             data-stockfish-show-arrow="true"
+             data-retain-wrong-moves="false">
+        </div>
+        <p><em>Wrong moves revert automatically</em></p>
+      </div>
+
+      <!-- Retention mode -->
+      <div class="puzzle-container">
+        <div class="puzzle-label">⏸️ Retention Mode (New!)</div>
+        <div class="chess-puzzle" id="puzzle-retained"
+             data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+             data-solution="f3e5,f6e4,e1g1"
+             data-width="400"
+             data-expose-state-events="true"
+             data-stockfish-enabled="true"
+             data-stockfish-show-arrow="true"
+             data-retain-wrong-moves="true">
+        </div>
+        <p><em>Wrong moves stay visible until manual undo</em></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>API Testing</h2>
+    <div>
+      <button onclick="testAPI()" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Test Public API Methods
+      </button>
+      <button onclick="testStateTransitions()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+        Monitor State Transitions
+      </button>
+    </div>
+
+    <div class="code-block" id="api-output">
+      <strong>API Test Output:</strong><br>
+      Click "Test Public API Methods" to see results...
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Configuration Example</h2>
+    <div class="code-block">
+&lt;!-- Enable wrong move retention --&gt;
+&lt;div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+     data-solution="f3e5,f6e4,e1g1"
+     data-retain-wrong-moves="true"
+     data-stockfish-enabled="true"
+     data-stockfish-show-arrow="true"&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+// Access widget instance
+const widget = document.querySelector('.chess-puzzle').widgetInstance;
+
+// Check if wrong move is retained
+if (widget.hasWrongMove()) {
+  console.log('Wrong move data:', widget.getWrongMoveData());
+
+  // Manually revert the wrong move
+  widget.revertWrongMove();
+}
+&lt;/script&gt;
+    </div>
+  </div>
+
+  <script src="dist/chess-widget.min.js"></script>
+  <script>
+    // Initialize all widgets
+    ChessWidget.init();
+
+    // Get widget instances
+    const puzzleAuto = document.getElementById('puzzle-auto').widgetInstance;
+    const puzzleRetained = document.getElementById('puzzle-retained').widgetInstance;
+
+    // Monitor state changes for retained puzzle
+    if (puzzleRetained && puzzleRetained.puzzleState) {
+      puzzleRetained.puzzleState.on('stateChange', ({ previous, current }) => {
+        console.log(`[Retained Puzzle] State: ${previous} → ${current}`);
+      });
+
+      puzzleRetained.puzzleState.on('wrongMove', ({ move }) => {
+        console.log(`[Retained Puzzle] Wrong move: ${move}`);
+      });
+    }
+
+    // API Testing Functions
+    function testAPI() {
+      const output = document.getElementById('api-output');
+      const results = [];
+
+      results.push('<strong>API Test Results:</strong><br><br>');
+
+      // Test hasWrongMove()
+      const hasWrong = puzzleRetained.hasWrongMove();
+      results.push(`✓ hasWrongMove(): ${hasWrong}<br>`);
+
+      // Test getWrongMoveData()
+      const wrongData = puzzleRetained.getWrongMoveData();
+      results.push(`✓ getWrongMoveData(): ${wrongData ? JSON.stringify(wrongData, null, 2) : 'null'}<br>`);
+
+      // Test state
+      if (puzzleRetained.puzzleState) {
+        results.push(`✓ Current State: ${puzzleRetained.puzzleState.getState()}<br>`);
+        results.push(`✓ isWrongMove(): ${puzzleRetained.puzzleState.isWrongMove()}<br>`);
+      }
+
+      // Instructions
+      results.push('<br><strong>To test revertWrongMove():</strong><br>');
+      results.push('1. Make a wrong move on the right puzzle<br>');
+      results.push('2. Then run: <code>document.getElementById("puzzle-retained").widgetInstance.revertWrongMove()</code> in console<br>');
+      results.push('3. Or click the "Undo Wrong Move" button<br>');
+
+      output.innerHTML = results.join('');
+    }
+
+    function testStateTransitions() {
+      const output = document.getElementById('api-output');
+      const results = [];
+
+      results.push('<strong>State Transition Monitoring Active</strong><br>');
+      results.push('All state changes will be logged to the console.<br><br>');
+      results.push('<em>Make moves on either puzzle to see state transitions...</em><br>');
+
+      // Add listeners for both puzzles
+      [puzzleAuto, puzzleRetained].forEach((widget, index) => {
+        const label = index === 0 ? 'Auto' : 'Retained';
+
+        if (widget && widget.puzzleState) {
+          widget.puzzleState.on('stateChange', ({ previous, current, metadata }) => {
+            console.log(`[${label} Puzzle] State Change:`, { previous, current, metadata });
+            results.push(`[${label}] ${previous} → ${current}<br>`);
+            output.innerHTML = results.join('');
+          });
+
+          widget.puzzleState.on('wrongMove', ({ move }) => {
+            console.log(`[${label} Puzzle] Wrong Move:`, move);
+          });
+
+          widget.puzzleState.on('correctMove', ({ move }) => {
+            console.log(`[${label} Puzzle] Correct Move:`, move);
+          });
+        }
+      });
+
+      output.innerHTML = results.join('');
+    }
+
+    console.log('Phase 2 Test Page Loaded');
+    console.log('Puzzle Instances:', { puzzleAuto, puzzleRetained });
+  </script>
+</body>
+</html>

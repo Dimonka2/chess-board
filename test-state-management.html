@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>State Management Test - Chess Widget</title>
+  <link rel="stylesheet" href="dist/chess-widget.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .puzzle-container {
+      display: inline-block;
+      margin: 20px;
+    }
+    .event-log {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .event-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #4CAF50;
+      background: white;
+    }
+    .event-entry.stateChange { border-left-color: #2196F3; }
+    .event-entry.moveAttempted { border-left-color: #9E9E9E; }
+    .event-entry.correctMove { border-left-color: #4CAF50; }
+    .event-entry.wrongMove { border-left-color: #f44336; }
+    .event-entry.puzzleSolved { border-left-color: #FF9800; }
+    .event-entry.puzzleReset { border-left-color: #9C27B0; }
+    .state-display {
+      background: #e3f2fd;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-weight: bold;
+      color: #1976d2;
+    }
+    .controls button {
+      margin: 5px;
+      padding: 10px 20px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background: #1976D2;
+    }
+  </style>
+</head>
+<body>
+  <h1>State Management System Test</h1>
+
+  <div class="test-section">
+    <h2>Test Puzzle with State Events</h2>
+    <p>This puzzle has state management enabled. Try making moves and watch the event log!</p>
+
+    <div class="puzzle-container">
+      <div class="chess-puzzle" id="test-puzzle"
+           data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+           data-solution="f3e5,f6e4,e1g1"
+           data-width="400"
+           data-expose-state-events="true">
+      </div>
+    </div>
+
+    <div class="state-display" id="state-display">
+      Current State: <span id="current-state">not_started</span>
+    </div>
+
+    <div class="controls">
+      <button onclick="getStateInfo()">Get State Info</button>
+      <button onclick="getHistory()">View State History</button>
+      <button onclick="clearLog()">Clear Event Log</button>
+    </div>
+
+    <div class="event-log" id="event-log">
+      <strong>Event Log:</strong>
+      <div id="event-entries"></div>
+    </div>
+  </div>
+
+  <script src="dist/chess-widget.min.js"></script>
+  <script>
+    // Initialize the widget
+    ChessWidget.init();
+
+    // Get widget instance
+    const puzzleElement = document.getElementById('test-puzzle');
+    const widget = puzzleElement.widgetState;
+    const instance = puzzleElement.widgetInstance;
+
+    // Event logging
+    const eventEntries = document.getElementById('event-entries');
+    const currentStateDisplay = document.getElementById('current-state');
+
+    function logEvent(eventName, data) {
+      const entry = document.createElement('div');
+      entry.className = `event-entry ${eventName}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.innerHTML = `<strong>[${timestamp}] ${eventName}:</strong> ${JSON.stringify(data, null, 2)}`;
+      eventEntries.insertBefore(entry, eventEntries.firstChild);
+    }
+
+    function updateStateDisplay(state) {
+      currentStateDisplay.textContent = state;
+      currentStateDisplay.style.color = getStateColor(state);
+    }
+
+    function getStateColor(state) {
+      switch(state) {
+        case 'not_started': return '#757575';
+        case 'in_progress': return '#2196F3';
+        case 'wrong_move': return '#f44336';
+        case 'solved': return '#4CAF50';
+        default: return '#000';
+      }
+    }
+
+    // Register event listeners
+    widget.on('stateChange', (data) => {
+      logEvent('stateChange', data);
+      updateStateDisplay(data.current);
+    });
+
+    widget.on('moveAttempted', (data) => {
+      logEvent('moveAttempted', data);
+    });
+
+    widget.on('correctMove', (data) => {
+      logEvent('correctMove', data);
+    });
+
+    widget.on('wrongMove', (data) => {
+      logEvent('wrongMove', data);
+    });
+
+    widget.on('puzzleSolved', () => {
+      logEvent('puzzleSolved', {});
+    });
+
+    widget.on('puzzleReset', () => {
+      logEvent('puzzleReset', {});
+    });
+
+    // Control functions
+    function getStateInfo() {
+      const state = widget.getState();
+      alert(`Current State: ${state}\n\nState Check Methods:\n` +
+            `- isNotStarted(): ${widget.isNotStarted()}\n` +
+            `- isInProgress(): ${widget.isInProgress()}\n` +
+            `- isWrongMove(): ${widget.isWrongMove()}\n` +
+            `- isSolved(): ${widget.isSolved()}`);
+    }
+
+    function getHistory() {
+      const history = widget.getStateHistory();
+      console.log('State History:', history);
+      alert(`State History (${history.length} entries):\n\n` +
+            history.map((h, i) =>
+              `${i + 1}. ${h.state} at ${new Date(h.timestamp).toLocaleTimeString()}`
+            ).join('\n'));
+    }
+
+    function clearLog() {
+      eventEntries.innerHTML = '';
+    }
+
+    // Log initial state
+    logEvent('initialized', { state: widget.getState() });
+    console.log('Widget initialized:', { widget, instance });
+  </script>
+</body>
+</html>

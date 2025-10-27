@@ -9,6 +9,11 @@
  * @param {string} dest - Destination square
  */
 ChessWidget.prototype.onMove = function(orig, dest) {
+  // Emit move attempted event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.emitEvent('moveAttempted', { from: orig, to: dest });
+  }
+
   let move = null;
 
   // Try to make the move - chess.js may throw an error for invalid moves
@@ -35,6 +40,11 @@ ChessWidget.prototype.onMove = function(orig, dest) {
     return;
   }
 
+  // Transition from not_started to in_progress on first move (Phase 5)
+  if (this.puzzleState && this.puzzleState.isNotStarted()) {
+    this.puzzleState.setState('in_progress', { firstMove: move });
+  }
+
   // Check if this is the expected solution move using SolutionValidator
   if (this.solutionValidator && this.solutionValidator.hasSolution()) {
     const moveNotation = move.from + move.to + (move.promotion || '');
@@ -42,6 +52,11 @@ ChessWidget.prototype.onMove = function(orig, dest) {
                    || this.solutionValidator.isValidMove(move.san, this.currentMoveIndex);
 
     if (isCorrect) {
+      // Emit correct move event (Phase 5)
+      if (this.puzzleState) {
+        this.puzzleState.emitEvent('correctMove', { move: moveNotation });
+      }
+
       // Correct move
       this.currentMoveIndex++;
 
@@ -52,7 +67,12 @@ ChessWidget.prototype.onMove = function(orig, dest) {
         this.handleCorrectMove();
       }
     } else {
-      // Wrong move
+      // Wrong move - transition to wrong_move state (Phase 5)
+      if (this.puzzleState) {
+        this.puzzleState.setState('wrong_move', { wrongMove: moveNotation });
+        this.puzzleState.emitEvent('wrongMove', { move: moveNotation });
+      }
+
       this.handleWrongMove();
     }
   } else {
@@ -122,6 +142,16 @@ ChessWidget.prototype.handleWrongMoveWithStockfish = async function() {
   // Get current position after user's wrong move (before undo)
   const currentFen = this.chess.fen();
 
+  // Store wrong move data (Phase 5)
+  const history = this.chess.history({ verbose: true });
+  const wrongMove = history[history.length - 1];
+  this.wrongMoveData = {
+    userMove: wrongMove,
+    fenBeforeWrongMove: null,  // Will be set after undo
+    counterMove: null,          // Will be set if Stockfish returns move
+    timestamp: Date.now()
+  };
+
   try {
     // Check cache first
     let counterMoveData = null;
@@ -141,7 +171,15 @@ ChessWidget.prototype.handleWrongMoveWithStockfish = async function() {
 
     // Show the counter-move
     if (counterMoveData && counterMoveData.move) {
-      await this.showStockfishCounterMove(counterMoveData);
+      // Store counter-move in wrong move data
+      this.wrongMoveData.counterMove = counterMoveData.move;
+
+      // Use retention mode or auto-revert based on config (Phase 5)
+      if (this.retainWrongMoves) {
+        await this.showStockfishCounterMoveRetained(counterMoveData);
+      } else {
+        await this.showStockfishCounterMove(counterMoveData);
+      }
     } else {
       // Fallback to basic feedback if no counter-move
       this.handleWrongMoveBasic();
@@ -236,9 +274,96 @@ ChessWidget.prototype.showStockfishCounterMove = async function(counterMoveData)
 };
 
 /**
+ * Show Stockfish's counter-move with retention (Phase 5)
+ * Keeps the wrong move visible until manually reverted
+ * @param {object} counterMoveData - Counter-move data from Stockfish
+ */
+ChessWidget.prototype.showStockfishCounterMoveRetained = async function(counterMoveData) {
+  const move = counterMoveData.move;
+
+  // Parse the UCI move (e.g., "e2e4" or "e7e8q")
+  const from = move.substring(0, 2);
+  const to = move.substring(2, 4);
+  const promotion = move.length > 4 ? move[4] : undefined;
+
+  // Make the counter-move on the chess.js board
+  const chessMove = this.chess.move({ from, to, promotion });
+
+  if (chessMove) {
+    // Animate the counter-move on the board
+    this.chessground.move(from, to);
+
+    // Update board state to reflect the counter-move
+    const currentTurn = this.chess.turn();
+    const configUpdate = {
+      fen: this.chess.fen(),
+      orientation: this.getOrientation(),
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
+      movable: {
+        color: undefined  // Disable moves until revert
+      }
+    };
+
+    // Add arrows if enabled: red for counter-move, yellow for user's wrong move
+    if (this.stockfishShowArrow) {
+      const arrows = [
+        {
+          orig: from,
+          dest: to,
+          brush: 'red'  // Red arrow for counter-move
+        }
+      ];
+
+      // Add yellow arrow for user's wrong move
+      if (this.wrongMoveData && this.wrongMoveData.userMove) {
+        arrows.push({
+          orig: this.wrongMoveData.userMove.from,
+          dest: this.wrongMoveData.userMove.to,
+          brush: 'yellow'  // Yellow arrow for wrong move
+        });
+      }
+
+      configUpdate.drawable = {
+        enabled: false,  // Disable manual drawing
+        visible: true,
+        autoShapes: arrows
+      };
+    }
+
+    this.chessground.set(configUpdate);
+
+    // Add question mark indicator on user's wrong move square (Phase 3)
+    if (this.wrongMoveData && this.wrongMoveData.userMove) {
+      this.addQuestionMarkIndicator(this.wrongMoveData.userMove.to);
+    }
+
+    // Show feedback message for retention mode
+    this.showFeedback('stockfish_counter_retained', { move: move });
+
+    // Show revert button if it exists
+    if (this.revertButton) {
+      this.revertButton.style.display = 'inline-block';
+    }
+
+    // Do NOT auto-revert - wait for manual revert
+    // Board stays disabled with arrows visible until user clicks Undo
+
+  } else {
+    // Failed to make counter-move, fall back to basic feedback
+    this.handleWrongMoveBasic();
+  }
+};
+
+/**
  * Handle puzzle completion
  */
 ChessWidget.prototype.handlePuzzleSolved = function() {
+  // Transition to solved state and emit event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.setState('solved');
+    this.puzzleState.emitEvent('puzzleSolved');
+  }
+
   this.showFeedback('solved');
   this.chessground.set({ movable: { color: undefined } });
 };
@@ -362,5 +487,130 @@ ChessWidget.prototype.playPremove = function() {
       this.statusElement.textContent = this.i18n.t('make_your_move');
       this.statusElement.className = 'chess-widget-status';
     }
+  }
+};
+
+/**
+ * Revert the current wrong move (Phase 5)
+ * Undos user's wrong move and Stockfish's counter-move (if any)
+ */
+ChessWidget.prototype.revertWrongMove = function() {
+  if (!this.wrongMoveData) {
+    console.warn('No wrong move to revert');
+    return;
+  }
+
+  // Determine how many moves to undo
+  // If there's a counter-move, undo 2 moves (counter + user's wrong move)
+  // Otherwise, undo 1 move (just user's wrong move)
+  const movesToUndo = this.wrongMoveData.counterMove ? 2 : 1;
+
+  // Undo moves
+  for (let i = 0; i < movesToUndo; i++) {
+    this.chess.undo();
+  }
+
+  // Clear wrong move data
+  this.wrongMoveData = null;
+
+  // Remove question mark indicator (Phase 3)
+  this.removeQuestionMarkIndicator();
+
+  // Hide revert button
+  if (this.revertButton) {
+    this.revertButton.style.display = 'none';
+  }
+
+  // Transition back to in_progress state
+  if (this.puzzleState) {
+    this.puzzleState.setState('in_progress');
+  }
+
+  // Reset board to position before wrong move
+  const resetTurn = this.chess.turn();
+  this.chessground.set({
+    fen: this.chess.fen(),
+    orientation: this.getOrientation(),
+    turnColor: resetTurn === 'w' ? 'white' : 'black',
+    lastMove: undefined,
+    movable: {
+      color: resetTurn === 'w' ? 'white' : 'black',
+      dests: this.getDests()
+    },
+    drawable: {
+      autoShapes: []  // Clear arrows
+    }
+  });
+
+  // Show "try again" message
+  this.showFeedback('try_again');
+};
+
+/**
+ * Check if there is a wrong move currently retained (Phase 5)
+ * @returns {boolean}
+ */
+ChessWidget.prototype.hasWrongMove = function() {
+  return this.wrongMoveData !== null;
+};
+
+/**
+ * Get wrong move data (Phase 5)
+ * @returns {object|null}
+ */
+ChessWidget.prototype.getWrongMoveData = function() {
+  return this.wrongMoveData;
+};
+
+/**
+ * Add question mark indicator on wrong move square (Phase 3)
+ * @param {string} square - Chess square notation (e.g., "e4")
+ */
+ChessWidget.prototype.addQuestionMarkIndicator = function(square) {
+  // Remove any existing indicator first
+  this.removeQuestionMarkIndicator();
+
+  // Calculate position based on square and board orientation
+  const file = square.charCodeAt(0) - 97; // a=0, b=1, ..., h=7
+  const rank = parseInt(square[1]) - 1;   // 1=0, 2=1, ..., 8=7
+
+  const orientation = this.chessground.state.orientation;
+  const squareSize = this.width / 8;
+
+  // Calculate pixel position based on orientation
+  let x, y;
+  if (orientation === 'white') {
+    x = file * squareSize;
+    y = (7 - rank) * squareSize;
+  } else {
+    // Black orientation (board flipped)
+    x = (7 - file) * squareSize;
+    y = rank * squareSize;
+  }
+
+  // Center the indicator on the square
+  const indicatorSize = 50; // From CSS
+  const centerX = x + (squareSize / 2) - (indicatorSize / 2);
+  const centerY = y + (squareSize / 2) - (indicatorSize / 2);
+
+  // Create indicator element
+  const indicator = document.createElement('div');
+  indicator.className = 'wrong-move-indicator';
+  indicator.textContent = '?';
+  indicator.style.left = centerX + 'px';
+  indicator.style.top = centerY + 'px';
+
+  // Add to board element
+  this.boardElement.appendChild(indicator);
+  this.questionMarkIndicator = indicator;
+};
+
+/**
+ * Remove question mark indicator (Phase 3)
+ */
+ChessWidget.prototype.removeQuestionMarkIndicator = function() {
+  if (this.questionMarkIndicator) {
+    this.questionMarkIndicator.remove();
+    this.questionMarkIndicator = null;
   }
 };
