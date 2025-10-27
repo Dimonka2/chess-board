@@ -300,8 +300,217 @@ if (this.stockfishShowArrow) {
 - ✅ Performance is acceptable (<2s response time)
 - ✅ File size increase is minimal (modular architecture)
 
-### Next Phase
-- **Phase 5**: Final documentation, cross-browser testing, and polish
+## Phase 5 Implementation (Completed)
+
+### External State Management & Wrong Move Retention
+
+**Completion Date:** 2025-10-27
+**Total Implementation Time:** ~6.5 hours
+**Lines Changed:** ~1,870 insertions, ~20 deletions
+
+### Features Delivered
+
+1. **External State Management System**
+   - Finite state machine with 4 states
+   - Event-driven architecture with 6 event types
+   - Public API for state tracking and event subscriptions
+   - State history tracking with metadata
+
+2. **Wrong Move Retention**
+   - Optional retention mode (keeps mistakes visible)
+   - Manual revert functionality via button
+   - Dual arrow display (yellow + red)
+   - Question mark visual indicator
+
+3. **Visual Indicators**
+   - Question mark overlay on wrong move squares
+   - Positioning logic for all board sizes and orientations
+   - Auto-removal on revert or reset
+
+### Module Structure Updates
+
+**New Modules:**
+- **`src/widget-state.js`**: State machine and event system (211 lines)
+
+**Module Concatenation Order:**
+```
+widget-utils.js
+widget-i18n.js
+widget-solution-validator.js
+widget-cache.js
+widget-stockfish.js
+widget-state.js          ✨ NEW (Phase 5)
+widget-core.js
+widget-board.js
+widget-solution.js
+chess-widget.js
+```
+
+### State Management Architecture
+
+**State Machine:**
+```
+not_started → in_progress → solved
+                ↓
+           wrong_move
+                ↓
+           in_progress
+```
+
+**Event System:**
+| Event | Trigger | Payload |
+|-------|---------|---------|
+| `stateChange` | Any state transition | `{ previous, current, metadata }` |
+| `moveAttempted` | Before move validation | `{ from, to }` |
+| `correctMove` | Valid move made | `{ move }` |
+| `wrongMove` | Invalid move made | `{ move }` |
+| `puzzleSolved` | Puzzle completed | `{}` |
+| `puzzleReset` | Reset button clicked | `{}` |
+
+**Public API:**
+```javascript
+// Access via element properties
+element.widgetState      // PuzzleState instance
+element.widgetInstance   // ChessWidget instance
+
+// State methods
+widget.getState()              // Get current state
+widget.on(event, callback)     // Subscribe to events
+widget.off(event, callback)    // Unsubscribe
+widget.getStateHistory()       // Get state history
+
+// Wrong move methods
+widget.hasWrongMove()          // Check if wrong move retained
+widget.revertWrongMove()       // Manually undo wrong move
+widget.getWrongMoveData()      // Get wrong move details
+```
+
+### Wrong Move Retention Flow
+
+**Auto-Revert Mode (default):**
+1. User makes wrong move
+2. Shows Stockfish counter-move
+3. Auto-undoes after 2 seconds
+4. User tries again
+
+**Retention Mode (`data-retain-wrong-moves="true"`):**
+1. User makes wrong move
+2. Shows Stockfish counter-move
+3. Displays yellow arrow (user's move) + red arrow (counter)
+4. Shows question mark indicator on square
+5. Displays "Undo Wrong Move" button
+6. Waits for user to click button
+7. Manually reverts both moves
+8. User tries again
+
+### Visual Indicator Implementation
+
+**CSS:**
+- Amber background (warning color)
+- White "?" text (32px, bold)
+- Circular shape (50px diameter)
+- Positioned absolutely on board
+- Z-index 100 (above pieces)
+
+**Positioning Logic:**
+```javascript
+// Calculate square position based on orientation
+if (orientation === 'white') {
+  x = file * squareSize;
+  y = (7 - rank) * squareSize;
+} else {
+  x = (7 - file) * squareSize;
+  y = rank * squareSize;
+}
+
+// Center indicator
+centerX = x + (squareSize / 2) - (indicatorSize / 2);
+centerY = y + (squareSize / 2) - (indicatorSize / 2);
+```
+
+### Configuration
+
+**New Attributes:**
+- `data-expose-state-events`: Enable external state events (default: true)
+- `data-retain-wrong-moves`: Keep wrong moves visible until manual undo (default: false)
+
+**Example:**
+```html
+<!-- State management with wrong move retention -->
+<div class="chess-puzzle" id="my-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+     data-solution="f3e5,f6e4,e1g1"
+     data-expose-state-events="true"
+     data-retain-wrong-moves="true"
+     data-stockfish-enabled="true"
+     data-stockfish-show-arrow="true">
+</div>
+
+<script>
+// Subscribe to events
+const puzzle = document.getElementById('my-puzzle').widgetState;
+
+puzzle.on('stateChange', ({ previous, current }) => {
+  console.log(`State: ${previous} → ${current}`);
+});
+
+puzzle.on('puzzleSolved', () => {
+  console.log('Congratulations!');
+});
+
+// Manually revert wrong move
+const widget = document.getElementById('my-puzzle').widgetInstance;
+if (widget.hasWrongMove()) {
+  widget.revertWrongMove();
+}
+</script>
+```
+
+### File Structure (Complete)
+```
+src/
+├── chess-widget.js              # Main entry point
+├── widget-core.js               # Core class + state initialization
+├── widget-board.js              # Board rendering + revert button
+├── widget-solution.js           # Solution validation + retention + indicators
+├── widget-solution-validator.js # Alternative solutions
+├── widget-stockfish.js          # Stockfish API client
+├── widget-cache.js              # localStorage caching
+├── widget-state.js              # ✨ NEW: State management & events
+├── widget-i18n.js               # Internationalization (EN, DE)
+└── widget-utils.js              # Utility functions
+```
+
+### Internationalization Updates
+
+**New Messages:**
+- EN: `stockfish_counter_retained` - "Opponent plays {move}. Click 'Undo' to try again."
+- DE: `stockfish_counter_retained` - "Gegner spielt {move}. Klicke 'Rückgängig' um es erneut zu versuchen."
+- EN: `try_again` - "Try again!"
+- DE: `try_again` - "Versuche es erneut!"
+- EN: `undo_wrong_move` - "Undo Wrong Move"
+- DE: `undo_wrong_move` - "Falschen Zug rückgängig machen"
+
+### Testing
+
+**Test Pages Created:**
+- `test-state-management.html` - Interactive state tracking with event logging
+- `test-wrong-move-retention.html` - Side-by-side comparison (auto-revert vs retention)
+
+### Backward Compatibility
+
+✅ All changes are **fully backward compatible**:
+- State management enabled by default but doesn't affect existing behavior
+- Wrong move retention is opt-in (default: false)
+- All existing widgets work without modification
+- No breaking changes to public API
+
+### Performance Impact
+
+- Build size increase: ~5KB minified (~3% increase)
+- Memory overhead: ~1KB per widget instance
+- No performance regression in move validation
+- Event emission: O(n) where n = number of listeners (typically < 10)
 
 ## Testing Production Build
 

@@ -26,21 +26,33 @@ Create custom chess puzzles with our interactive builder - no coding required! F
 
 ## Features
 
+### Core Features
 - ♟️ **Interactive Chess Puzzles** - Drag & drop pieces with solution validation
 - 🎭 **Premove Support** - Automatic opponent moves before puzzle starts (perfect for Lichess imports!)
 - 🔀 **Alternative Solutions** - Support multiple valid solution paths with `|` separator
 - 🌍 **Internationalization** - Multi-language support (English, German, extensible)
-- 🤖 **Stockfish Integration** - AI-powered counter-move feedback for wrong moves
-- 🏹 **Visual Arrows** - Red arrows showing Stockfish's counter-moves
-- 💾 **Smart Caching** - localStorage caching reduces API calls by >80%
-- 🔄 **Free Play Mode** - Analysis mode without puzzle constraints
-- 🔄 **Auto-Flip Board** - Automatically rotate board for black's turn
 - 📱 **Responsive Design** - Works perfectly on desktop and mobile
 - 🎨 **Professional UI** - Lichess-quality board and piece graphics
 - ⚡ **Zero Dependencies** - No CDN calls, works completely offline
 - 🔧 **Easy Integration** - Just include 2 files in your HTML
 - 🚀 **Modern Development** - Vite dev server with live reload
 - 🎯 **Multiple Widgets** - Add multiple boards to the same page
+
+### AI & Feedback Features
+- 🤖 **Stockfish Integration** - AI-powered counter-move feedback for wrong moves
+- 🏹 **Visual Arrows** - Red arrows showing Stockfish's counter-moves
+- 💾 **Smart Caching** - localStorage caching reduces API calls by >80%
+- ⏸️ **Wrong Move Retention** - Optionally keep mistakes visible for analysis
+- ❓ **Question Mark Indicator** - Visual marker on wrong move squares
+- 🎯 **Dual Arrows** - Yellow arrow (your move) + Red arrow (counter-move)
+
+### Advanced Features (New!)
+- 📊 **State Management** - Track puzzle progress with event system
+- 🔔 **Event System** - Subscribe to state changes, moves, and puzzle completion
+- 🔄 **Manual Revert** - Undo wrong moves with button control
+- 📈 **State History** - Complete history of all state transitions
+- 🎮 **Public API** - Full programmatic control over puzzle state
+- 🔄 **Free Play Mode** - Analysis mode without puzzle constraints
 - ⚙️ **Highly Configurable** - FEN positions, solutions, board sizes, languages, AI feedback
 
 ## Quick Start
@@ -109,6 +121,13 @@ Use these data attributes to configure your chess widgets:
 | `data-stockfish-show-arrow` | No | Show red arrow for counter-moves (default: true) | `"true"` |
 | `data-stockfish-show-animation` | No | Animate counter-moves (default: true) | `"true"` |
 | `data-stockfish-cache-enabled` | No | Enable localStorage caching (default: true) | `"true"` |
+
+### Advanced Features (Phase 5 Implementation)
+
+| Attribute | Required | Description | Example |
+|-----------|----------|-------------|---------|
+| `data-expose-state-events` | No | Enable external state event system (default: true) | `"true"` |
+| `data-retain-wrong-moves` | No | Keep wrong moves visible until manual undo (default: false) | `"true"` |
 
 ## Examples
 
@@ -189,6 +208,89 @@ Use these data attributes to configure your chess widgets:
      <!-- Perfect for imported Lichess puzzles! -->
 </div>
 ```
+
+### State Management & Event System
+```html
+<!-- Puzzle with state tracking -->
+<div class="chess-puzzle" id="my-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+     data-solution="f3e5,f6e4,e1g1"
+     data-expose-state-events="true">
+</div>
+
+<script>
+// Subscribe to state changes
+const puzzle = document.getElementById('my-puzzle').widgetState;
+
+puzzle.on('stateChange', ({ previous, current }) => {
+  console.log(`State: ${previous} → ${current}`);
+});
+
+puzzle.on('puzzleSolved', () => {
+  console.log('Congratulations!');
+});
+
+puzzle.on('wrongMove', ({ move }) => {
+  console.log(`Wrong move: ${move}`);
+});
+</script>
+```
+
+### Wrong Move Retention
+```html
+<!-- Puzzle with wrong move retention -->
+<div class="chess-puzzle"
+     data-fen="r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+     data-solution="f3e5,f6e4,e1g1"
+     data-retain-wrong-moves="true"
+     data-stockfish-enabled="true"
+     data-stockfish-show-arrow="true">
+     <!-- Wrong moves stay visible with question mark indicator -->
+     <!-- Shows dual arrows: yellow (your move) + red (counter-move) -->
+     <!-- Click "Undo Wrong Move" button to try again -->
+</div>
+```
+
+## Advanced API
+
+### Public Methods
+
+Access the widget instance via `element.widgetInstance`:
+
+```javascript
+const widget = document.querySelector('.chess-puzzle').widgetInstance;
+
+// State management
+widget.getState()              // Get current state
+widget.on(event, callback)     // Subscribe to events
+widget.off(event, callback)    // Unsubscribe from events
+widget.getStateHistory()       // Get complete state history
+
+// Wrong move control
+widget.hasWrongMove()          // Check if wrong move is retained
+widget.revertWrongMove()       // Manually undo wrong move
+widget.getWrongMoveData()      // Get wrong move details
+```
+
+### Events
+
+| Event | Trigger | Data |
+|-------|---------|------|
+| `stateChange` | Any state transition | `{ previous, current, metadata }` |
+| `moveAttempted` | Before move validation | `{ from, to }` |
+| `correctMove` | Valid move made | `{ move }` |
+| `wrongMove` | Invalid move made | `{ move }` |
+| `puzzleSolved` | Puzzle completed | `{}` |
+| `puzzleReset` | Reset button clicked | `{}` |
+
+### States
+
+| State | Description |
+|-------|-------------|
+| `not_started` | Initial state, no moves made |
+| `in_progress` | At least one correct move made |
+| `wrong_move` | User made incorrect move (transitional) |
+| `solved` | Puzzle successfully completed |
 
 ## Development
 

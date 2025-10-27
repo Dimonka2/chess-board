@@ -157,6 +157,11 @@ ChessWidget.prototype.reset = function() {
     this.revertButton.style.display = 'none';
   }
 
+  // Remove question mark indicator (Phase 3)
+  if (this.removeQuestionMarkIndicator) {
+    this.removeQuestionMarkIndicator();
+  }
+
   // Reset puzzle state and emit event (Phase 5)
   if (this.puzzleState) {
     this.puzzleState.reset();

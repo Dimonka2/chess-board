@@ -4532,6 +4532,11 @@ ChessWidget.prototype.reset = function() {
     this.revertButton.style.display = 'none';
   }
 
+  // Remove question mark indicator (Phase 3)
+  if (this.removeQuestionMarkIndicator) {
+    this.removeQuestionMarkIndicator();
+  }
+
   // Reset puzzle state and emit event (Phase 5)
   if (this.puzzleState) {
     this.puzzleState.reset();
@@ -4898,6 +4903,11 @@ ChessWidget.prototype.showStockfishCounterMoveRetained = async function(counterM
 
     this.chessground.set(configUpdate);
 
+    // Add question mark indicator on user's wrong move square (Phase 3)
+    if (this.wrongMoveData && this.wrongMoveData.userMove) {
+      this.addQuestionMarkIndicator(this.wrongMoveData.userMove.to);
+    }
+
     // Show feedback message for retention mode
     this.showFeedback('stockfish_counter_retained', { move: move });
 
@@ -5074,6 +5084,9 @@ ChessWidget.prototype.revertWrongMove = function() {
   // Clear wrong move data
   this.wrongMoveData = null;
 
+  // Remove question mark indicator (Phase 3)
+  this.removeQuestionMarkIndicator();
+
   // Hide revert button
   if (this.revertButton) {
     this.revertButton.style.display = 'none';
@@ -5118,6 +5131,59 @@ ChessWidget.prototype.hasWrongMove = function() {
  */
 ChessWidget.prototype.getWrongMoveData = function() {
   return this.wrongMoveData;
+};
+
+/**
+ * Add question mark indicator on wrong move square (Phase 3)
+ * @param {string} square - Chess square notation (e.g., "e4")
+ */
+ChessWidget.prototype.addQuestionMarkIndicator = function(square) {
+  // Remove any existing indicator first
+  this.removeQuestionMarkIndicator();
+
+  // Calculate position based on square and board orientation
+  const file = square.charCodeAt(0) - 97; // a=0, b=1, ..., h=7
+  const rank = parseInt(square[1]) - 1;   // 1=0, 2=1, ..., 8=7
+
+  const orientation = this.chessground.state.orientation;
+  const squareSize = this.width / 8;
+
+  // Calculate pixel position based on orientation
+  let x, y;
+  if (orientation === 'white') {
+    x = file * squareSize;
+    y = (7 - rank) * squareSize;
+  } else {
+    // Black orientation (board flipped)
+    x = (7 - file) * squareSize;
+    y = rank * squareSize;
+  }
+
+  // Center the indicator on the square
+  const indicatorSize = 50; // From CSS
+  const centerX = x + (squareSize / 2) - (indicatorSize / 2);
+  const centerY = y + (squareSize / 2) - (indicatorSize / 2);
+
+  // Create indicator element
+  const indicator = document.createElement('div');
+  indicator.className = 'wrong-move-indicator';
+  indicator.textContent = '?';
+  indicator.style.left = centerX + 'px';
+  indicator.style.top = centerY + 'px';
+
+  // Add to board element
+  this.boardElement.appendChild(indicator);
+  this.questionMarkIndicator = indicator;
+};
+
+/**
+ * Remove question mark indicator (Phase 3)
+ */
+ChessWidget.prototype.removeQuestionMarkIndicator = function() {
+  if (this.questionMarkIndicator) {
+    this.questionMarkIndicator.remove();
+    this.questionMarkIndicator = null;
+  }
 };
 
 
