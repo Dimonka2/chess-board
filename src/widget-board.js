@@ -7,11 +7,17 @@
  * Create the DOM structure for the board and controls
  */
 ChessWidget.prototype.createBoardContainer = function() {
+  // Conditionally add revert button if wrong move retention is enabled (Phase 5)
+  const revertButton = this.retainWrongMoves
+    ? '<button class="chess-widget-revert" style="display:none;">Undo Wrong Move</button>'
+    : '';
+
   this.element.innerHTML = `
     <div class="chess-widget-container">
       <div class="chess-widget-board" style="width: ${this.width}px; height: ${this.width}px;"></div>
       <div class="chess-widget-controls">
         <button class="chess-widget-reset">Reset</button>
+        ${revertButton}
         <div class="chess-widget-status">${this.i18n.t('make_your_move')}</div>
       </div>
     </div>
@@ -20,6 +26,7 @@ ChessWidget.prototype.createBoardContainer = function() {
   this.boardElement = this.element.querySelector('.chess-widget-board');
   this.statusElement = this.element.querySelector('.chess-widget-status');
   this.resetButton = this.element.querySelector('.chess-widget-reset');
+  this.revertButton = this.element.querySelector('.chess-widget-revert');
 };
 
 /**
@@ -125,6 +132,11 @@ ChessWidget.prototype.updateBoard = function() {
 ChessWidget.prototype.createControls = function() {
   // Add reset button handler
   this.resetButton.addEventListener('click', () => this.reset());
+
+  // Add revert button handler if wrong move retention is enabled (Phase 5)
+  if (this.retainWrongMoves && this.revertButton) {
+    this.revertButton.addEventListener('click', () => this.revertWrongMove());
+  }
 };
 
 /**
@@ -137,6 +149,12 @@ ChessWidget.prototype.reset = function() {
   // Reset solution validator if it exists
   if (this.solutionValidator) {
     this.solutionValidator.reset();
+  }
+
+  // Clear wrong move data and hide revert button (Phase 5)
+  this.wrongMoveData = null;
+  if (this.revertButton) {
+    this.revertButton.style.display = 'none';
   }
 
   // Reset puzzle state and emit event (Phase 5)

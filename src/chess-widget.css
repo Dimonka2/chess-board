@@ -44,6 +44,27 @@
   background: #1e70ff;
 }
 
+/* Revert button for wrong move retention (Phase 5) */
+.chess-widget-revert {
+  background: #f0ad4e;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.chess-widget-revert:hover {
+  background: #ec971f;
+}
+
+.chess-widget-revert:active {
+  background: #d58512;
+}
+
 .chess-widget-status {
   flex: 1;
   text-align: center;
@@ -87,11 +108,12 @@
     gap: 8px;
   }
   
-  .chess-widget-reset {
+  .chess-widget-reset,
+  .chess-widget-revert {
     width: 100%;
     justify-self: stretch;
   }
-  
+
   .chess-widget-status {
     text-align: center;
     order: -1;

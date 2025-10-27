@@ -12,22 +12,28 @@ class I18n {
         wrong: 'Try again!',
         solved: 'Puzzle solved! Well done!',
         stockfish_counter: 'Stockfish responds: {move}. Try again!',
+        stockfish_counter_retained: "Opponent plays {move}. Click 'Undo' to try again.",
+        try_again: 'Try again!',
         loading: 'Thinking...',
         invalid_move: 'Invalid move',
         your_turn: 'Your turn',
         make_your_move: 'Make your move',
-        waiting: 'Waiting for opponent...'
+        waiting: 'Waiting for opponent...',
+        undo_wrong_move: 'Undo Wrong Move'
       },
       de: {
         correct: 'Richtig! Weiter so...',
         wrong: 'Versuche es noch einmal!',
         solved: 'Puzzle gelöst! Gut gemacht!',
         stockfish_counter: 'Stockfish antwortet: {move}. Versuche es noch einmal!',
+        stockfish_counter_retained: 'Gegner spielt {move}. Klicke "Rückgängig" um es erneut zu versuchen.',
+        try_again: 'Versuche es erneut!',
         loading: 'Denke nach...',
         invalid_move: 'Ungültiger Zug',
         your_turn: 'Du bist am Zug',
         make_your_move: 'Mache deinen Zug',
-        waiting: 'Warte auf Gegner...'
+        waiting: 'Warte auf Gegner...',
+        undo_wrong_move: 'Falschen Zug rückgängig machen'
       }
     };
   }
