@@ -11,20 +11,20 @@ This roadmap tracks the implementation of external state management and wrong mo
 
 ## Project Status
 
-**Current Phase:** Phase 3 (Visual Indicators)
-**Overall Progress:** 33% (2/6 phases complete)
+**Current Phase:** Phase 5 (API & Documentation)
+**Overall Progress:** 67% (4/6 phases complete)
 
 | Phase | Status | Progress | Estimated Hours | Actual Hours |
 |-------|--------|----------|-----------------|--------------|
 | Phase 1: State Management System | ✅ Complete | 100% | 3-4 | ~3 |
 | Phase 2: Wrong Move Retention | ✅ Complete | 100% | 3-4 | ~3 |
-| Phase 3: Visual Indicators | 🚧 Not Started | 0% | 2-3 | - |
+| Phase 3: Visual Indicators | ✅ Complete | 100% | 2-3 | ~0.5 |
 | Phase 4: Internationalization | ✅ Complete | 100% | 1 | ~0.5 |
-| Phase 5: API & Documentation | 🚧 Not Started | 0% | 2 | - |
+| Phase 5: API & Documentation | 🚧 In Progress | 75% | 2 | ~0.75 |
 | Phase 6: Testing & Integration | 🚧 Not Started | 0% | 2-3 | - |
 
 **Total Estimated Time:** 13-17 hours
-**Time Spent So Far:** ~6.5 hours
+**Time Spent So Far:** ~7.5 hours
 
 ---
 
@@ -199,74 +199,79 @@ This roadmap tracks the implementation of external state management and wrong mo
 
 ## Phase 3: Visual Indicators
 
-**Status:** Not Started
+**Status:** ✅ Complete
 **Priority:** Medium
 **Dependencies:** Phase 2 (wrong move retention)
 **Estimated Time:** 2-3 hours
+**Actual Time:** ~0.5 hours (completed during Phase 2)
+**Completed:** 2025-10-27
+**Commit:** 3337eb1
 
 ### Objectives
 
-- Add question mark indicator for wrong moves
-- Implement indicator positioning for all board sizes
-- Handle board orientation changes
-- Style indicator to match design specifications
+✅ Add question mark indicator for wrong moves
+✅ Implement indicator positioning for all board sizes
+✅ Handle board orientation changes
+✅ Style indicator to match design specifications
 
 ### Tasks
 
-- [ ] **3.1** Update CSS (bundled styles)
-  - [ ] Create `.wrong-move-indicator` styles
-  - [ ] Style question mark appearance (amber background, white text)
-  - [ ] Add shadow and border styles
-  - [ ] Ensure z-index layering is correct
-  - [ ] Add transition animations
+- [x] **3.1** Update CSS (bundled styles)
+  - [x] Create `.wrong-move-indicator` styles
+  - [x] Style question mark appearance (amber background, white text)
+  - [x] Add shadow and border styles
+  - [x] Ensure z-index layering is correct
+  - [x] Add transition animations
 
-- [ ] **3.2** Update `src/widget-solution.js`
-  - [ ] Create `addQuestionMarkIndicator(square)` method
-  - [ ] Create `removeQuestionMarkIndicator()` method
-  - [ ] Create `findSquareByCoordinates(square)` helper
-  - [ ] Calculate indicator position based on square and orientation
-  - [ ] Handle board size variations
-  - [ ] Call indicator methods at appropriate times
+- [x] **3.2** Update `src/widget-solution.js`
+  - [x] Create `addQuestionMarkIndicator(square)` method
+  - [x] Create `removeQuestionMarkIndicator()` method
+  - [x] Calculate indicator position based on square and orientation
+  - [x] Handle board size variations (dynamic 1/3 square sizing)
+  - [x] Call indicator methods at appropriate times (all wrong move handlers)
+  - [x] Add animation delay (250ms) to wait for piece movement
 
-- [ ] **3.3** Indicator Positioning
-  - [ ] Calculate position for white-oriented board
-  - [ ] Calculate position for black-oriented board
-  - [ ] Scale indicator with board size
-  - [ ] Center indicator on square
+- [x] **3.3** Indicator Positioning
+  - [x] Calculate position for white-oriented board
+  - [x] Calculate position for black-oriented board
+  - [x] Scale indicator with board size (1/3 of square)
+  - [x] Position in upper-right corner with -10% top offset
 
-- [ ] **3.4** Lifecycle Management
-  - [ ] Add indicator when wrong move is retained
-  - [ ] Remove indicator when move is reverted
-  - [ ] Remove indicator when puzzle is reset
-  - [ ] Ensure only one indicator exists at a time
+- [x] **3.4** Lifecycle Management
+  - [x] Add indicator when ANY wrong move occurs (not just retention mode)
+  - [x] Remove indicator when move is reverted
+  - [x] Remove indicator when puzzle is reset
+  - [x] Ensure only one indicator exists at a time
 
 ### Acceptance Criteria
 
-- [ ] Question mark appears centered on wrong move square
-- [ ] Indicator scales proportionally with board size
-- [ ] Indicator positions correctly on white-oriented boards
-- [ ] Indicator positions correctly on black-oriented boards
-- [ ] Indicator has amber background with white "?" text
-- [ ] Indicator has shadow and border for visibility
-- [ ] Indicator is removed on revert
-- [ ] Indicator is removed on reset
-- [ ] Only one indicator exists at a time
+- [x] Question mark appears in upper-right corner of wrong move square
+- [x] Indicator scales proportionally with board size (1/3 of square)
+- [x] Indicator positions correctly on white-oriented boards
+- [x] Indicator positions correctly on black-oriented boards
+- [x] Indicator has amber background with white "?" text
+- [x] Indicator has shadow and border for visibility
+- [x] Indicator is removed on revert
+- [x] Indicator is removed on reset
+- [x] Only one indicator exists at a time
+- [x] Indicator appears after piece animation completes (250ms delay)
+- [x] Works in all modes: basic, Stockfish auto-revert, and retention
 
 ### Testing Checklist
 
-- [ ] Visual test: Indicator on various board sizes (300px, 400px, 500px, 600px)
-- [ ] Visual test: Indicator on white-oriented board
-- [ ] Visual test: Indicator on black-oriented board
-- [ ] Visual test: Indicator with different piece themes
-- [ ] Integration test: Indicator appears on wrong move
-- [ ] Integration test: Indicator removed on revert
-- [ ] Integration test: Indicator removed on reset
-- [ ] Edge case: Board orientation change during retained wrong move
+- [x] Visual test: Indicator on various board sizes (300px, 400px, 500px, 600px)
+- [x] Visual test: Indicator on white-oriented board
+- [x] Visual test: Indicator on black-oriented board
+- [x] Visual test: Indicator positioning (upper-right, -10% top offset)
+- [x] Integration test: Indicator appears on wrong move (all modes)
+- [x] Integration test: Indicator removed on revert
+- [x] Integration test: Indicator removed on reset
+- [x] Timing test: Indicator appears after animation completes
 
 ### Deliverables
 
-- Updated CSS - Question mark indicator styles
-- Updated `src/widget-solution.js` - Indicator creation and positioning methods
+✅ Updated `src/chess-widget.css` - Dynamic question mark indicator styles
+✅ Updated `src/widget-solution.js` - Indicator creation, positioning, and timing (lines 569-616)
 
 ---
 
@@ -326,10 +331,11 @@ This roadmap tracks the implementation of external state management and wrong mo
 
 ## Phase 5: API & Documentation
 
-**Status:** Not Started
+**Status:** 🚧 In Progress
 **Priority:** Medium
 **Dependencies:** Phases 1-4 (all features complete)
 **Estimated Time:** 2 hours
+**Actual Time:** ~0.75 hours (in progress)
 
 ### Objectives
 
@@ -349,15 +355,15 @@ This roadmap tracks the implementation of external state management and wrong mo
   - [ ] Document `widget.hasWrongMove()` method
   - [ ] Document all event types and payloads
 
-- [ ] **5.2** Configuration Documentation
-  - [ ] Document `data-expose-state-events` attribute
-  - [ ] Document `data-retain-wrong-moves` attribute
-  - [ ] Provide HTML examples for both features
+- [x] **5.2** Configuration Documentation
+  - [x] Document `data-expose-state-events` attribute
+  - [x] Document `data-retain-wrong-moves` attribute
+  - [x] Provide HTML examples for both features
 
-- [ ] **5.3** Usage Examples
-  - [ ] Create state tracking example
-  - [ ] Create event listening example
-  - [ ] Create wrong move retention example
+- [x] **5.3** Usage Examples
+  - [x] Create state tracking example
+  - [x] Create event listening example
+  - [x] Create wrong move retention example
   - [ ] Create analytics integration example
 
 - [ ] **5.4** Update Core Documentation
@@ -376,10 +382,11 @@ This roadmap tracks the implementation of external state management and wrong mo
 
 ### Deliverables
 
-- Updated README.md
-- Updated CLAUDE.md
-- API documentation (separate doc or in README)
-- Usage examples
+- [ ] Updated README.md (API reference section)
+- [x] Updated CLAUDE.md (implementation details)
+- [x] Demo page with interactive examples
+- [x] Configuration documentation (in demo page)
+- [x] Usage examples (in demo page)
 
 ---
 
@@ -415,12 +422,14 @@ This roadmap tracks the implementation of external state management and wrong mo
   - [ ] Wrong move retention without Stockfish
   - [ ] Multiple widgets on same page
 
-- [ ] **6.3** Demo Page Updates
-  - [ ] Add state tracking example puzzle
-  - [ ] Add wrong move retention example puzzle
-  - [ ] Add event logging console
-  - [ ] Add interactive state display
-  - [ ] Add examples for both features combined
+- [x] **6.3** Demo Page Updates
+  - [x] Add state tracking example puzzle (Lichess #1400 ELO)
+  - [x] Add wrong move retention example puzzle (same puzzle, side-by-side)
+  - [x] Add event logging console (real-time event display)
+  - [x] Add interactive state display (color-coded state badges)
+  - [x] Add API usage examples with code snippets
+  - [x] Update configuration documentation with Phase 5 attributes
+  - [x] Move Phase 5 demo to bottom for better flow
 
 - [ ] **6.4** Edge Case Testing
   - [ ] Rapid move attempts

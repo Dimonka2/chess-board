@@ -160,6 +160,102 @@
         .header-links a:hover {
             text-decoration: underline;
         }
+
+        /* Event console styles for state management demo */
+        .event-console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+
+        .event-console .event-line {
+            margin: 4px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .event-console .event-name {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+
+        .event-console .event-data {
+            color: #ce9178;
+        }
+
+        .event-console .timestamp {
+            color: #6a9955;
+            font-size: 10px;
+        }
+
+        .state-display {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        .state-not_started {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .state-in_progress {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .state-wrong_move {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .state-solved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .feature-box {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .feature-box h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .clear-console-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .clear-console-btn:hover {
+            background: #5a6268;
+        }
     </style>
 
     <!-- Production CSS - comment out for local Vite development -->
@@ -171,7 +267,7 @@
         <a href="https://github.com/Dimonka2/chess-board" target="_blank">📦 GitHub Repository</a>
         <a href="https://github.com/Dimonka2/chess-board#readme" target="_blank">📖 Documentation</a>
     </div>
-    
+
     <div class="demo-section">
         <h2>Tactical Puzzles by ELO Rating</h2>
         <div class="puzzle-info">
@@ -526,6 +622,89 @@
 &lt;/div&gt;</code></pre>
     </div>
 
+    <!-- Phase 5 Features Demo -->
+    <div class="demo-section">
+        <h2>🎯 Phase 5: State Management & Wrong Move Retention</h2>
+        <div class="puzzle-info">
+            <h3>New Features Overview</h3>
+            <p>The widget now includes external state management with event tracking and optional wrong move retention for deeper analysis!</p>
+        </div>
+
+        <div class="feature-grid">
+            <!-- State Management Demo -->
+            <div class="feature-box">
+                <h3>📊 State Management & Event Tracking</h3>
+                <p>Watch real-time events as you solve this puzzle. The console below shows all state changes and move attempts.</p>
+                <p style="font-size: 12px; color: #666;">Lichess Puzzle #1400 ELO - Mate in 2, Middlegame Fork</p>
+                <div class="chess-puzzle" id="state-demo-puzzle"
+                     data-fen="2r2r2/kp3qp1/p3n2p/Q1pN4/4P3/B7/P4RPP/1R5K b - - 0 28"
+                     data-premove-enabled="true"
+                     data-solution="f7f2,a5b6,a7b8,b6b7"
+                     data-width="350"
+                     data-orientation="white"
+                     data-expose-state-events="true"
+                     data-stockfish-enabled="true">
+                </div>
+                <div style="margin-top: 12px;">
+                    <strong>Current State:</strong> <span id="current-state" class="state-display state-not_started">not_started</span>
+                </div>
+                <div class="event-console" id="event-console">
+                    <div style="color: #6a9955;">// Events will appear here...</div>
+                </div>
+                <button class="clear-console-btn" onclick="clearConsole()">Clear Console</button>
+            </div>
+
+            <!-- Wrong Move Retention Demo -->
+            <div class="feature-box">
+                <h3>⏸️ Wrong Move Retention</h3>
+                <p>Try making a wrong move! The position will be retained with a question mark indicator. Use the "Undo Wrong Move" button to continue.</p>
+                <p style="font-size: 12px; color: #666;">Lichess Puzzle #1400 ELO - Mate in 2, Middlegame Fork</p>
+                <div class="chess-puzzle" id="retention-demo-puzzle"
+                     data-fen="2r2r2/kp3qp1/p3n2p/Q1pN4/4P3/B7/P4RPP/1R5K b - - 0 28"
+                     data-premove-enabled="true"
+                     data-solution="f7f2,a5b6,a7b8,b6b7"
+                     data-width="350"
+                     data-orientation="white"
+                     data-retain-wrong-moves="true"
+                     data-stockfish-enabled="true"
+                     data-stockfish-show-arrow="true">
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                    <strong>💡 Tip:</strong> Notice the yellow arrow (your move) and red arrow (Stockfish counter-move) when you make a mistake!
+                </div>
+            </div>
+        </div>
+
+        <!-- API Usage Example -->
+        <div style="margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 4px;">
+            <h3>💻 API Usage Example</h3>
+            <p>Here's how to subscribe to events programmatically:</p>
+            <pre><code>// Get the widget state instance
+const puzzle = document.getElementById('my-puzzle').widgetState;
+
+// Subscribe to all state changes
+puzzle.on('stateChange', ({ previous, current, metadata }) => {
+  console.log(`State changed: ${previous} → ${current}`);
+});
+
+// Subscribe to specific events
+puzzle.on('wrongMove', ({ move }) => {
+  console.warn(`Wrong move: ${move}`);
+});
+
+puzzle.on('puzzleSolved', () => {
+  console.log('Congratulations! 🎉');
+});
+
+// Get current state
+const currentState = puzzle.getState(); // 'not_started' | 'in_progress' | 'wrong_move' | 'solved'
+
+// Get state history
+const history = puzzle.getStateHistory();
+</code></pre>
+        </div>
+    </div>
+
     <div class="demo-section">
         <h2>How to Use</h2>
         <p>To add a chess widget to your website, simply include the CSS and JavaScript files, then add a div with the appropriate data attributes:</p>
@@ -543,16 +722,23 @@
         
         <h3>Data Attributes</h3>
         <ul>
+            <li><strong>Core Attributes:</strong></li>
             <li><code>data-fen</code>: The chess position in FEN notation (required)</li>
             <li><code>data-solution</code>: Solution moves - comma-separated, use "|" for alternative paths (optional, enables puzzle mode)</li>
-            <li><code>data-lang</code>: Language code - "en" (English, default) or "de" (German) (optional, Phase 1)</li>
+            <li><code>data-lang</code>: Language code - "en" (English, default) or "de" (German) (optional)</li>
             <li><code>data-width</code>: Board width in pixels (optional, default: 400)</li>
             <li><code>data-auto-flip</code>: Auto-rotate board for black's turn (optional, set to "true" to enable)</li>
-            <li><strong>Phase 2 Features:</strong></li>
+            <li><code>data-orientation</code>: Fixed orientation - "white" or "black" (optional, overrides auto-flip)</li>
+            <li><code>data-premove-enabled</code>: Play first solution move automatically (optional, for Lichess imports)</li>
+            <li><strong>Stockfish Features:</strong></li>
             <li><code>data-stockfish-enabled</code>: Enable Stockfish counter-move feedback (optional, set to "true")</li>
-            <li><code>data-stockfish-depth</code>: Stockfish analysis depth (optional, default: 12)</li>
+            <li><code>data-stockfish-depth</code>: Stockfish analysis depth 1-20 (optional, default: 12)</li>
             <li><code>data-stockfish-timeout</code>: Max API wait time in ms (optional, default: 2000)</li>
             <li><code>data-stockfish-cache-enabled</code>: Enable localStorage caching (optional, default: true)</li>
+            <li><code>data-stockfish-show-arrow</code>: Show red arrow for counter-move (optional, default: true)</li>
+            <li><strong>Phase 5 Features (State Management & Wrong Move Retention):</strong></li>
+            <li><code>data-expose-state-events</code>: Enable external state tracking and events (optional, default: true)</li>
+            <li><code>data-retain-wrong-moves</code>: Keep wrong moves visible until manual undo (optional, default: false)</li>
         </ul>
         
         <p>The widget is completely standalone with all dependencies (chessground and chess.js) bundled - no CDN calls required!</p>
@@ -565,27 +751,106 @@
     <!-- <script type="module" src="./main.js"></script> -->
 
     <script>
+        // Clear event console
+        function clearConsole() {
+            const console = document.getElementById('event-console');
+            console.innerHTML = '<div style="color: #6a9955;">// Events will appear here...</div>';
+        }
+
+        // State management demo setup
+        function setupStateDemo() {
+            const puzzleElement = document.getElementById('state-demo-puzzle');
+            const stateDisplay = document.getElementById('current-state');
+            const eventConsole = document.getElementById('event-console');
+
+            if (!puzzleElement || !puzzleElement.widgetState) {
+                console.warn('State demo puzzle not initialized yet');
+                return;
+            }
+
+            const puzzleState = puzzleElement.widgetState;
+
+            // Function to log events to the console
+            function logEvent(eventName, data) {
+                const timestamp = new Date().toLocaleTimeString();
+                const eventLine = document.createElement('div');
+                eventLine.className = 'event-line';
+
+                const dataStr = JSON.stringify(data, null, 2);
+                eventLine.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="event-name">${eventName}</span>
+                    <span class="event-data">${dataStr}</span>
+                `;
+
+                // Remove placeholder if exists
+                if (eventConsole.firstChild && eventConsole.firstChild.textContent.includes('Events will appear here')) {
+                    eventConsole.innerHTML = '';
+                }
+
+                eventConsole.appendChild(eventLine);
+                eventConsole.scrollTop = eventConsole.scrollHeight;
+            }
+
+            // Update state display
+            function updateStateDisplay(state) {
+                stateDisplay.textContent = state;
+                stateDisplay.className = 'state-display state-' + state;
+            }
+
+            // Subscribe to all events
+            puzzleState.on('stateChange', (data) => {
+                logEvent('stateChange', data);
+                updateStateDisplay(data.current);
+            });
+
+            puzzleState.on('moveAttempted', (data) => {
+                logEvent('moveAttempted', data);
+            });
+
+            puzzleState.on('correctMove', (data) => {
+                logEvent('correctMove', data);
+            });
+
+            puzzleState.on('wrongMove', (data) => {
+                logEvent('wrongMove', data);
+            });
+
+            puzzleState.on('puzzleSolved', (data) => {
+                logEvent('puzzleSolved', data);
+            });
+
+            puzzleState.on('puzzleReset', (data) => {
+                logEvent('puzzleReset', data);
+            });
+        }
+
         // ELO selector functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Setup state management demo after a short delay to ensure widgets are initialized
+            setTimeout(() => {
+                setupStateDemo();
+            }, 500);
+
             const eloButtons = document.querySelectorAll('.elo-btn');
             const eloGroups = document.querySelectorAll('.elo-group');
-            
+
             eloButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const selectedElo = this.dataset.elo;
-                    
+
                     // Remove active class from all buttons
                     eloButtons.forEach(btn => btn.classList.remove('active'));
                     // Add active class to clicked button
                     this.classList.add('active');
-                    
+
                     // Hide all elo groups
                     eloGroups.forEach(group => group.classList.remove('active'));
                     // Show selected elo group
                     const targetGroup = document.querySelector(`.elo-group[data-elo="${selectedElo}"]`);
                     if (targetGroup) {
                         targetGroup.classList.add('active');
-                        
+
                         // Reinitialize chess widgets in the new group
                         setTimeout(() => {
                             const widgets = targetGroup.querySelectorAll('.chess-puzzle');

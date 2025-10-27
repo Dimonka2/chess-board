@@ -73,18 +73,18 @@ Re-enable board, user can try again
   z-index: 100;
   pointer-events: none;
 
-  /* Size & Shape */
-  width: 50px;
-  height: 50px;
+  /* Size & Shape - Dynamically set to 1/3 of square size */
+  /* width: calculated (squareSize / 3) */
+  /* height: calculated (squareSize / 3) */
   border-radius: 50%;
 
   /* Appearance */
-  background: rgba(255, 193, 7, 0.8);  /* Amber/warning color */
+  background: rgba(255, 193, 7, 0.9);  /* Amber/warning color */
   color: white;
-  font-size: 32px;
+  /* font-size: calculated (indicatorSize * 0.7) */
   font-weight: bold;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 
   /* Layout */
   display: flex;
@@ -95,11 +95,20 @@ Re-enable board, user can try again
 
 **Content:** Single character "?"
 
-**Positioning:** Centered on the destination square of wrong move
+**Sizing:**
+- Indicator size is 1/3 of square size
+- Font size is 70% of indicator size
+- Scales automatically with board width
+
+**Positioning:**
+- Upper-right corner of the destination square
+- 5% padding from right edge
+- -10% padding from top (extends slightly above square for better visibility)
 
 **Lifecycle:**
-- Created when wrong move is validated
-- Removed when user clicks "Undo" button
+- Created when wrong move is validated (all modes)
+- **Auto-revert mode**: Shown for 1.5-2 seconds, then automatically removed
+- **Retention mode**: Persists until user clicks "Undo" button
 - Removed when puzzle is reset
 
 ### Arrow Indicators (Stockfish Mode)

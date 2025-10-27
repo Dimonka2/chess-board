@@ -407,14 +407,23 @@ widget.getWrongMoveData()      // Get wrong move details
 
 **CSS:**
 - Amber background (warning color)
-- White "?" text (32px, bold)
-- Circular shape (50px diameter)
-- Positioned absolutely on board
+- White "?" text (font size scales with board)
+- Circular shape (1/3 of square size)
+- Positioned in upper-right corner of square
 - Z-index 100 (above pieces)
+
+**Dynamic Sizing:**
+- Indicator size: `squareSize / 3`
+- Font size: `indicatorSize * 0.7`
+- Scales automatically with board width (300px - 800px)
 
 **Positioning Logic:**
 ```javascript
 // Calculate square position based on orientation
+const squareSize = this.width / 8;
+const indicatorSize = squareSize / 3;
+const fontSize = indicatorSize * 0.7;
+
 if (orientation === 'white') {
   x = file * squareSize;
   y = (7 - rank) * squareSize;
@@ -423,9 +432,9 @@ if (orientation === 'white') {
   y = rank * squareSize;
 }
 
-// Center indicator
-centerX = x + (squareSize / 2) - (indicatorSize / 2);
-centerY = y + (squareSize / 2) - (indicatorSize / 2);
+// Position in upper-right corner with 5% padding
+const posX = x + squareSize - indicatorSize - (squareSize * 0.05);
+const posY = y + (squareSize * 0.05);
 ```
 
 ### Configuration

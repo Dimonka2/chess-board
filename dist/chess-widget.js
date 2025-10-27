@@ -4638,7 +4638,16 @@ ChessWidget.prototype.onMove = function(orig, dest) {
         this.handleCorrectMove();
       }
     } else {
-      // Wrong move - transition to wrong_move state (Phase 5)
+      // Wrong move - store move data and transition to wrong_move state (Phase 5)
+      const history = this.chess.history({ verbose: true });
+      const wrongMove = history[history.length - 1];
+      this.wrongMoveData = {
+        userMove: wrongMove,
+        fenBeforeWrongMove: null,  // Will be set if needed
+        counterMove: null,          // Will be set if Stockfish is used
+        timestamp: Date.now()
+      };
+
       if (this.puzzleState) {
         this.puzzleState.setState('wrong_move', { wrongMove: moveNotation });
         this.puzzleState.emitEvent('wrongMove', { move: moveNotation });
@@ -4656,19 +4665,23 @@ ChessWidget.prototype.onMove = function(orig, dest) {
  * Handle a correct move
  */
 ChessWidget.prototype.handleCorrectMove = function() {
-  this.showFeedback('correct');
-
   // Check if there's an opponent's response to play automatically
   const expectedMoves = this.solutionValidator.getExpectedMoves(this.currentMoveIndex);
 
   if (expectedMoves.length > 0) {
     const nextMove = expectedMoves[0]; // Take first expected move (could be only one)
 
+    // Show feedback but don't auto-clear it (will clear after opponent moves)
+    this.statusElement.textContent = this.i18n.t('correct');
+    this.statusElement.className = 'chess-widget-status correct';
+
     // Play opponent's response after a short delay for better UX
     setTimeout(() => {
       this.playAutomaticMove(nextMove);
     }, 500);
   } else {
+    // No automatic move, show feedback with normal timeout
+    this.showFeedback('correct');
     this.updateBoard();
   }
 };
@@ -4688,8 +4701,26 @@ ChessWidget.prototype.handleWrongMove = async function() {
 /**
  * Handle wrong move with basic feedback (no Stockfish)
  */
-ChessWidget.prototype.handleWrongMoveBasic = function() {
+ChessWidget.prototype.handleWrongMoveBasic = async function() {
+  // Wait for piece animation to complete (Chessground default is 200ms)
+  await delay(250);
+
+  // Add question mark indicator on user's wrong move square
+  if (this.wrongMoveData && this.wrongMoveData.userMove) {
+    this.addQuestionMarkIndicator(this.wrongMoveData.userMove.to);
+  }
+
   this.showFeedback('wrong');
+
+  // Show indicator briefly before auto-undoing
+  await delay(1500);
+
+  // Remove question mark indicator
+  this.removeQuestionMarkIndicator();
+
+  // Clear wrong move data
+  this.wrongMoveData = null;
+
   this.chess.undo();
   const currentTurn = this.chess.turn();
 
@@ -4712,16 +4743,6 @@ ChessWidget.prototype.handleWrongMoveWithStockfish = async function() {
 
   // Get current position after user's wrong move (before undo)
   const currentFen = this.chess.fen();
-
-  // Store wrong move data (Phase 5)
-  const history = this.chess.history({ verbose: true });
-  const wrongMove = history[history.length - 1];
-  this.wrongMoveData = {
-    userMove: wrongMove,
-    fenBeforeWrongMove: null,  // Will be set after undo
-    counterMove: null,          // Will be set if Stockfish returns move
-    timestamp: Date.now()
-  };
 
   try {
     // Check cache first
@@ -4809,11 +4830,22 @@ ChessWidget.prototype.showStockfishCounterMove = async function(counterMoveData)
 
     this.chessground.set(configUpdate);
 
+    // Wait for piece animation to complete (Chessground default is 200ms)
+    await delay(250);
+
+    // Add question mark indicator on user's wrong move square
+    if (this.wrongMoveData && this.wrongMoveData.userMove) {
+      this.addQuestionMarkIndicator(this.wrongMoveData.userMove.to);
+    }
+
     // Show feedback message with the counter-move
     this.showFeedback('stockfish_counter', { move: move });
 
     // Wait 2 seconds, then undo both moves
     await delay(2000);
+
+    // Remove question mark indicator before resetting
+    this.removeQuestionMarkIndicator();
 
     // Undo Stockfish's move and user's wrong move
     this.chess.undo();  // Undo Stockfish's counter-move
@@ -4903,6 +4935,9 @@ ChessWidget.prototype.showStockfishCounterMoveRetained = async function(counterM
 
     this.chessground.set(configUpdate);
 
+    // Wait for piece animation to complete (Chessground default is 200ms)
+    await delay(250);
+
     // Add question mark indicator on user's wrong move square (Phase 3)
     if (this.wrongMoveData && this.wrongMoveData.userMove) {
       this.addQuestionMarkIndicator(this.wrongMoveData.userMove.to);
@@ -4963,8 +4998,19 @@ ChessWidget.prototype.playAutomaticMove = function(moveNotation) {
   }
 
   if (move) {
-    // Animate the move on the board for smooth visual effect
-    this.chessground.move(move.from, move.to);
+    // Update board with the automatic move
+    // We use set() instead of move() to avoid triggering the onMove event handler
+    const currentTurn = this.chess.turn();
+    this.chessground.set({
+      fen: this.chess.fen(),
+      orientation: this.getOrientation(),
+      turnColor: currentTurn === 'w' ? 'white' : 'black',
+      lastMove: [move.from, move.to], // Show the last move highlight
+      movable: {
+        color: currentTurn === 'w' ? 'white' : 'black',
+        dests: this.getDests()
+      }
+    });
 
     // Increment move index
     this.currentMoveIndex++;
@@ -4973,8 +5019,9 @@ ChessWidget.prototype.playAutomaticMove = function(moveNotation) {
     if (this.solutionValidator.isPuzzleSolved(this.currentMoveIndex)) {
       this.handlePuzzleSolved();
     } else {
-      // Update board state for next user move
-      this.updateBoard();
+      // Reset status message to default after automatic move
+      this.statusElement.textContent = this.i18n.t('make_your_move');
+      this.statusElement.className = 'chess-widget-status';
     }
   }
 };
@@ -5148,6 +5195,10 @@ ChessWidget.prototype.addQuestionMarkIndicator = function(square) {
   const orientation = this.chessground.state.orientation;
   const squareSize = this.width / 8;
 
+  // Indicator size is 1/3 of square size
+  const indicatorSize = squareSize / 3;
+  const fontSize = indicatorSize * 0.7; // Font size proportional to indicator
+
   // Calculate pixel position based on orientation
   let x, y;
   if (orientation === 'white') {
@@ -5159,17 +5210,19 @@ ChessWidget.prototype.addQuestionMarkIndicator = function(square) {
     y = rank * squareSize;
   }
 
-  // Center the indicator on the square
-  const indicatorSize = 50; // From CSS
-  const centerX = x + (squareSize / 2) - (indicatorSize / 2);
-  const centerY = y + (squareSize / 2) - (indicatorSize / 2);
+  // Position in upper-right corner of the square
+  const posX = x + squareSize - indicatorSize - (squareSize * 0.05); // 5% padding from right edge
+  const posY = y - (squareSize * 0.10); // -10% padding from top (extends above square)
 
   // Create indicator element
   const indicator = document.createElement('div');
   indicator.className = 'wrong-move-indicator';
   indicator.textContent = '?';
-  indicator.style.left = centerX + 'px';
-  indicator.style.top = centerY + 'px';
+  indicator.style.left = posX + 'px';
+  indicator.style.top = posY + 'px';
+  indicator.style.width = indicatorSize + 'px';
+  indicator.style.height = indicatorSize + 'px';
+  indicator.style.fontSize = fontSize + 'px';
 
   // Add to board element
   this.boardElement.appendChild(indicator);
