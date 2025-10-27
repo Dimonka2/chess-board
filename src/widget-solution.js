@@ -9,6 +9,11 @@
  * @param {string} dest - Destination square
  */
 ChessWidget.prototype.onMove = function(orig, dest) {
+  // Emit move attempted event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.emitEvent('moveAttempted', { from: orig, to: dest });
+  }
+
   let move = null;
 
   // Try to make the move - chess.js may throw an error for invalid moves
@@ -35,6 +40,11 @@ ChessWidget.prototype.onMove = function(orig, dest) {
     return;
   }
 
+  // Transition from not_started to in_progress on first move (Phase 5)
+  if (this.puzzleState && this.puzzleState.isNotStarted()) {
+    this.puzzleState.setState('in_progress', { firstMove: move });
+  }
+
   // Check if this is the expected solution move using SolutionValidator
   if (this.solutionValidator && this.solutionValidator.hasSolution()) {
     const moveNotation = move.from + move.to + (move.promotion || '');
@@ -42,6 +52,11 @@ ChessWidget.prototype.onMove = function(orig, dest) {
                    || this.solutionValidator.isValidMove(move.san, this.currentMoveIndex);
 
     if (isCorrect) {
+      // Emit correct move event (Phase 5)
+      if (this.puzzleState) {
+        this.puzzleState.emitEvent('correctMove', { move: moveNotation });
+      }
+
       // Correct move
       this.currentMoveIndex++;
 
@@ -52,7 +67,12 @@ ChessWidget.prototype.onMove = function(orig, dest) {
         this.handleCorrectMove();
       }
     } else {
-      // Wrong move
+      // Wrong move - transition to wrong_move state (Phase 5)
+      if (this.puzzleState) {
+        this.puzzleState.setState('wrong_move', { wrongMove: moveNotation });
+        this.puzzleState.emitEvent('wrongMove', { move: moveNotation });
+      }
+
       this.handleWrongMove();
     }
   } else {
@@ -239,6 +259,12 @@ ChessWidget.prototype.showStockfishCounterMove = async function(counterMoveData)
  * Handle puzzle completion
  */
 ChessWidget.prototype.handlePuzzleSolved = function() {
+  // Transition to solved state and emit event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.setState('solved');
+    this.puzzleState.emitEvent('puzzleSolved');
+  }
+
   this.showFeedback('solved');
   this.chessground.set({ movable: { color: undefined } });
 };

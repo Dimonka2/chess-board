@@ -139,6 +139,12 @@ ChessWidget.prototype.reset = function() {
     this.solutionValidator.reset();
   }
 
+  // Reset puzzle state and emit event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.reset();
+    this.puzzleState.emitEvent('puzzleReset');
+  }
+
   // Determine initial orientation after reset
   const currentTurn = this.chess.turn();
 

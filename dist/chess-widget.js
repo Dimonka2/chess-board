@@ -4019,6 +4019,213 @@ if (typeof window !== 'undefined') {
 
 
 /**
+ * Puzzle State Management
+ * Handles state machine logic, event system, and state history tracking
+ */
+
+/**
+ * Valid puzzle states
+ */
+const PUZZLE_STATES = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  WRONG_MOVE: 'wrong_move',
+  SOLVED: 'solved'
+};
+
+/**
+ * PuzzleState class - Manages puzzle state machine and event system
+ */
+class PuzzleState {
+  constructor() {
+    // Initialize state
+    this.currentState = PUZZLE_STATES.NOT_STARTED;
+
+    // Event listeners storage
+    // Format: { eventName: [callback1, callback2, ...] }
+    this.eventListeners = {};
+
+    // State history
+    // Format: [{ state, timestamp, metadata }, ...]
+    this.stateHistory = [];
+
+    // Record initial state in history
+    this.stateHistory.push({
+      state: this.currentState,
+      timestamp: Date.now(),
+      metadata: {}
+    });
+  }
+
+  /**
+   * Set new state and emit state change event
+   * @param {string} newState - New state to transition to
+   * @param {object} metadata - Optional metadata about the transition
+   */
+  setState(newState, metadata = {}) {
+    // Validate state
+    const validStates = Object.values(PUZZLE_STATES);
+    if (!validStates.includes(newState)) {
+      console.warn(`Invalid state: ${newState}. Valid states are: ${validStates.join(', ')}`);
+      return;
+    }
+
+    // Store previous state
+    const previousState = this.currentState;
+
+    // Update current state
+    this.currentState = newState;
+
+    // Add to state history
+    const historyEntry = {
+      state: newState,
+      timestamp: Date.now(),
+      metadata: metadata
+    };
+    this.stateHistory.push(historyEntry);
+
+    // Emit state change event
+    this.emitEvent('stateChange', {
+      previous: previousState,
+      current: newState,
+      metadata: metadata
+    });
+  }
+
+  /**
+   * Get current state
+   * @returns {string} Current state
+   */
+  getState() {
+    return this.currentState;
+  }
+
+  /**
+   * Get full state history
+   * @returns {Array} State history array
+   */
+  getStateHistory() {
+    return [...this.stateHistory]; // Return copy to prevent external modification
+  }
+
+  /**
+   * Register an event listener
+   * @param {string} eventName - Name of the event
+   * @param {Function} callback - Callback function to execute
+   */
+  on(eventName, callback) {
+    if (typeof callback !== 'function') {
+      console.warn('Event callback must be a function');
+      return;
+    }
+
+    // Initialize event listener array if it doesn't exist
+    if (!this.eventListeners[eventName]) {
+      this.eventListeners[eventName] = [];
+    }
+
+    // Add callback to listeners
+    this.eventListeners[eventName].push(callback);
+  }
+
+  /**
+   * Unregister an event listener
+   * @param {string} eventName - Name of the event
+   * @param {Function} callback - Callback function to remove
+   */
+  off(eventName, callback) {
+    if (!this.eventListeners[eventName]) {
+      return;
+    }
+
+    // Remove callback from listeners
+    this.eventListeners[eventName] = this.eventListeners[eventName].filter(
+      cb => cb !== callback
+    );
+
+    // Clean up empty arrays
+    if (this.eventListeners[eventName].length === 0) {
+      delete this.eventListeners[eventName];
+    }
+  }
+
+  /**
+   * Emit an event to all registered listeners
+   * @param {string} eventName - Name of the event
+   * @param {*} data - Data to pass to event listeners
+   */
+  emitEvent(eventName, data) {
+    if (!this.eventListeners[eventName]) {
+      return;
+    }
+
+    // Call all registered listeners with the event data
+    this.eventListeners[eventName].forEach(callback => {
+      try {
+        callback(data);
+      } catch (error) {
+        console.error(`Error in event listener for "${eventName}":`, error);
+      }
+    });
+  }
+
+  /**
+   * Check if puzzle is in a specific state
+   * @param {string} state - State to check
+   * @returns {boolean}
+   */
+  isState(state) {
+    return this.currentState === state;
+  }
+
+  /**
+   * Check if puzzle has not been started
+   * @returns {boolean}
+   */
+  isNotStarted() {
+    return this.currentState === PUZZLE_STATES.NOT_STARTED;
+  }
+
+  /**
+   * Check if puzzle is in progress
+   * @returns {boolean}
+   */
+  isInProgress() {
+    return this.currentState === PUZZLE_STATES.IN_PROGRESS;
+  }
+
+  /**
+   * Check if user made a wrong move
+   * @returns {boolean}
+   */
+  isWrongMove() {
+    return this.currentState === PUZZLE_STATES.WRONG_MOVE;
+  }
+
+  /**
+   * Check if puzzle is solved
+   * @returns {boolean}
+   */
+  isSolved() {
+    return this.currentState === PUZZLE_STATES.SOLVED;
+  }
+
+  /**
+   * Reset state to initial (not_started)
+   */
+  reset() {
+    this.setState(PUZZLE_STATES.NOT_STARTED, { reset: true });
+  }
+}
+
+// Expose PuzzleState to window for global access
+if (typeof window !== 'undefined') {
+  window.PuzzleState = PuzzleState;
+  window.PUZZLE_STATES = PUZZLE_STATES;
+}
+
+
+/**
  * ChessWidget Core - Main class definition and initialization
  * Constructor and initialization logic
  */
@@ -4063,10 +4270,25 @@ class ChessWidget {
       this.cache = null;
     }
 
-    // Initialize state
+    // Initialize puzzle state management (Phase 5)
+    if (this.exposeStateEvents) {
+      this.puzzleState = new PuzzleState();
+
+      // Expose state to external consumers via element properties
+      element.widgetState = this.puzzleState;
+      element.widgetInstance = this;
+    } else {
+      this.puzzleState = null;
+    }
+
+    // Initialize widget state
     this.currentMoveIndex = 0;
     this.chess = null;
     this.chessground = null;
+
+    // Wrong move retention state (Phase 5)
+    this.wrongMoveData = null;
+    this.questionMarkIndicator = null;
 
     this.init();
   }
@@ -4093,6 +4315,10 @@ class ChessWidget {
     this.stockfishShowArrow = parseBoolean(element.dataset.stockfishShowArrow, true);
     this.stockfishShowAnimation = parseBoolean(element.dataset.stockfishShowAnimation, true);
     this.stockfishCacheEnabled = parseBoolean(element.dataset.stockfishCacheEnabled, true);
+
+    // State management configuration (Phase 5)
+    this.exposeStateEvents = parseBoolean(element.dataset.exposeStateEvents, true);
+    this.retainWrongMoves = parseBoolean(element.dataset.retainWrongMoves, false);
   }
 
   /**
@@ -4282,6 +4508,12 @@ ChessWidget.prototype.reset = function() {
     this.solutionValidator.reset();
   }
 
+  // Reset puzzle state and emit event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.reset();
+    this.puzzleState.emitEvent('puzzleReset');
+  }
+
   // Determine initial orientation after reset
   const currentTurn = this.chess.turn();
 
@@ -4319,6 +4551,11 @@ ChessWidget.prototype.reset = function() {
  * @param {string} dest - Destination square
  */
 ChessWidget.prototype.onMove = function(orig, dest) {
+  // Emit move attempted event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.emitEvent('moveAttempted', { from: orig, to: dest });
+  }
+
   let move = null;
 
   // Try to make the move - chess.js may throw an error for invalid moves
@@ -4345,6 +4582,11 @@ ChessWidget.prototype.onMove = function(orig, dest) {
     return;
   }
 
+  // Transition from not_started to in_progress on first move (Phase 5)
+  if (this.puzzleState && this.puzzleState.isNotStarted()) {
+    this.puzzleState.setState('in_progress', { firstMove: move });
+  }
+
   // Check if this is the expected solution move using SolutionValidator
   if (this.solutionValidator && this.solutionValidator.hasSolution()) {
     const moveNotation = move.from + move.to + (move.promotion || '');
@@ -4352,6 +4594,11 @@ ChessWidget.prototype.onMove = function(orig, dest) {
                    || this.solutionValidator.isValidMove(move.san, this.currentMoveIndex);
 
     if (isCorrect) {
+      // Emit correct move event (Phase 5)
+      if (this.puzzleState) {
+        this.puzzleState.emitEvent('correctMove', { move: moveNotation });
+      }
+
       // Correct move
       this.currentMoveIndex++;
 
@@ -4362,7 +4609,12 @@ ChessWidget.prototype.onMove = function(orig, dest) {
         this.handleCorrectMove();
       }
     } else {
-      // Wrong move
+      // Wrong move - transition to wrong_move state (Phase 5)
+      if (this.puzzleState) {
+        this.puzzleState.setState('wrong_move', { wrongMove: moveNotation });
+        this.puzzleState.emitEvent('wrongMove', { move: moveNotation });
+      }
+
       this.handleWrongMove();
     }
   } else {
@@ -4549,6 +4801,12 @@ ChessWidget.prototype.showStockfishCounterMove = async function(counterMoveData)
  * Handle puzzle completion
  */
 ChessWidget.prototype.handlePuzzleSolved = function() {
+  // Transition to solved state and emit event (Phase 5)
+  if (this.puzzleState) {
+    this.puzzleState.setState('solved');
+    this.puzzleState.emitEvent('puzzleSolved');
+  }
+
   this.showFeedback('solved');
   this.chessground.set({ movable: { color: undefined } });
 };

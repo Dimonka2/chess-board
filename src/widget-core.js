@@ -43,10 +43,25 @@ class ChessWidget {
       this.cache = null;
     }
 
-    // Initialize state
+    // Initialize puzzle state management (Phase 5)
+    if (this.exposeStateEvents) {
+      this.puzzleState = new PuzzleState();
+
+      // Expose state to external consumers via element properties
+      element.widgetState = this.puzzleState;
+      element.widgetInstance = this;
+    } else {
+      this.puzzleState = null;
+    }
+
+    // Initialize widget state
     this.currentMoveIndex = 0;
     this.chess = null;
     this.chessground = null;
+
+    // Wrong move retention state (Phase 5)
+    this.wrongMoveData = null;
+    this.questionMarkIndicator = null;
 
     this.init();
   }
@@ -73,6 +88,10 @@ class ChessWidget {
     this.stockfishShowArrow = parseBoolean(element.dataset.stockfishShowArrow, true);
     this.stockfishShowAnimation = parseBoolean(element.dataset.stockfishShowAnimation, true);
     this.stockfishCacheEnabled = parseBoolean(element.dataset.stockfishCacheEnabled, true);
+
+    // State management configuration (Phase 5)
+    this.exposeStateEvents = parseBoolean(element.dataset.exposeStateEvents, true);
+    this.retainWrongMoves = parseBoolean(element.dataset.retainWrongMoves, false);
   }
 
   /**
